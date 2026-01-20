@@ -54,12 +54,6 @@ public class SessionManager {
             sessionUser.name = props.getProperty("username");
             sessionUser.email = props.getProperty("email");
             sessionUser.password = props.getProperty("password");
-            
-//            ResultSet rs = MySQL.execute("SELECT COUNT(*) FROM `user` WHERE id = '"+ sessionUser.id + "' LIMIT 1");
-//            if(!rs.next()) {
-//                homeScreen.setVisible(true);
-//                this.dispose();
-//            }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {

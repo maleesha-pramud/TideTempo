@@ -46,7 +46,7 @@ public class RegisterPanel extends javax.swing.JPanel {
         registerButton.setBackground(Colors.GREEN);
         registerButton.setForeground(Color.white);
         registerButton.putClientProperty(FlatClientProperties.STYLE, "arc: 90");
-        homeScreen = new HomeScreen();
+        homeScreen = HomeScreen.getInstance();
     }
 
     private void loadGenders() {

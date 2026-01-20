@@ -19,7 +19,8 @@ import javax.swing.SwingUtilities;
  */
 public class AuthScreen extends javax.swing.JFrame {
 
-    private HomeScreen homeScreen = new HomeScreen();
+    private static AuthScreen instance;
+    private HomeScreen homeScreen;
 
     private CardLayout authContentPanelLayout;
     private RegisterPanel registerPanel;
@@ -36,16 +37,26 @@ public class AuthScreen extends javax.swing.JFrame {
     /**
      * Creates new form LoginScreen
      */
-    public AuthScreen() {
+    private AuthScreen() {
         initComponents();
+        homeScreen = HomeScreen.getInstance();
         loadPanels();
         SwingUtilities.invokeLater(this::checkIfUserLoggedIn);
         TopBarStyle.getInstance().applyStyle(this);
     }
+    
+    public static AuthScreen getInstance() {
+        System.out.println(instance == null);
+        if(instance == null) {
+            System.out.println("assigning");
+            instance = new AuthScreen();
+        }
+        System.out.println(instance);
+        return instance;
+    }
 
     private synchronized void checkIfUserLoggedIn() {
         User userData = SessionManager.getUserSession();
-        System.out.println(userData.id);
         if (userData != null) {
             if (userData.name != null || userData.email != null || userData.password != null) {
                 homeScreen.setVisible(true);
@@ -115,7 +126,7 @@ public class AuthScreen extends javax.swing.JFrame {
         FlatMacDarkLaf.setup();
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new AuthScreen().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> AuthScreen.getInstance().setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

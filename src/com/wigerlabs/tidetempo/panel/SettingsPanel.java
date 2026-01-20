@@ -12,6 +12,7 @@ import com.wigerlabs.tidetempo.dialog.ConfirmationDialog;
 import com.wigerlabs.tidetempo.dialog.ProjectAddEditDialog;
 import com.wigerlabs.tidetempo.dialog.ProjectViewDialog;
 import com.wigerlabs.tidetempo.dialog.SuccessDialog;
+import com.wigerlabs.tidetempo.gui.AuthScreen;
 import com.wigerlabs.tidetempo.gui.HomeScreen;
 import com.wigerlabs.tidetempo.util.Colors;
 import com.wigerlabs.tidetempo.util.ComboItem;
@@ -42,15 +43,18 @@ public class SettingsPanel extends javax.swing.JPanel {
 //    private HomeScreen homeScreen;
     private User userData;
     private List<ComboItem> genderList;
+    private HomeScreen homeScreen;
+    private AuthScreen authScreen;
 
     /**
      * Creates new form ProjectsPanel
      *
      * @param parent
      */
-    public SettingsPanel(HomeScreen parent) {
+    public SettingsPanel() {
         initComponents();
-//        this.homeScreen = parent;
+        homeScreen = HomeScreen.getInstance();
+        authScreen = AuthScreen.getInstance();
         loadUserSessionData();
         loadGenders();
         loadUserData();
@@ -84,6 +88,8 @@ public class SettingsPanel extends javax.swing.JPanel {
 
             } else {
                 System.err.println("No user found with ID: " + userData.id);
+//                homeScreen.setVisible(false);
+//                authScreen.setVisible(true);
             }
 
         } catch (SQLException e) {

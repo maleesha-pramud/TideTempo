@@ -41,7 +41,7 @@ public class LoginPanel extends javax.swing.JPanel {
         loginButton.setBackground(Colors.GREEN);
         loginButton.setForeground(Color.white);
         loginButton.putClientProperty(FlatClientProperties.STYLE, "arc: 90");
-        homeScreen = new HomeScreen();
+        homeScreen = HomeScreen.getInstance();
     }
 
     /**

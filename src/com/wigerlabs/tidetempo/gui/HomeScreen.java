@@ -27,6 +27,8 @@ import javax.swing.SwingUtilities;
  */
 public class HomeScreen extends javax.swing.JFrame {
 
+    private static HomeScreen instance;
+    
     private CardLayout contentPanelLayout;
     
     private DashboardPanel dashboardPanel;
@@ -40,10 +42,17 @@ public class HomeScreen extends javax.swing.JFrame {
     /**
      * Creates new form Home
      */
-    public HomeScreen() {
+    private HomeScreen() {
         initComponents();
         init();
         loadPanels();
+    }
+    
+    public static HomeScreen getInstance() {
+        if(instance == null) {
+            instance = new HomeScreen();
+        }
+        return instance;
     }
 
     private void init() {
@@ -79,7 +88,7 @@ public class HomeScreen extends javax.swing.JFrame {
         this.tasksPanel = new TasksPanel(this);
         this.startWorkingPanel = new StartWorkingPanel();
         this.contractsPanel = new ContractsPanel(this);
-        this.settingsPanel = new SettingsPanel(this);
+        this.settingsPanel = new SettingsPanel();
         contentPanel.add(this.dashboardPanel, "dashboard_panel");
         contentPanel.add(this.clientsPanel, "clients_panel");
         contentPanel.add(this.projectsPanel, "projects_panel");
@@ -338,7 +347,7 @@ public class HomeScreen extends javax.swing.JFrame {
 
     private void logoutBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_logoutBtnActionPerformed
         SessionManager.clearUserSession();
-        AuthScreen authScreen = new AuthScreen();
+        AuthScreen authScreen = AuthScreen.getInstance();
         authScreen.setVisible(true);
         this.dispose();
     }//GEN-LAST:event_logoutBtnActionPerformed
