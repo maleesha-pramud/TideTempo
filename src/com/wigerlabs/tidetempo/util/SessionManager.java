@@ -31,8 +31,7 @@ public class SessionManager {
         props.setProperty("email", email);
         props.setProperty("password", password);
 
-        try {
-            FileOutputStream fos = new FileOutputStream(SESSION_FILE);
+        try (FileOutputStream fos = new FileOutputStream(SESSION_FILE)) {
             props.store(fos, "User Session");
         } catch (IOException e) {
             e.printStackTrace();
@@ -47,18 +46,16 @@ public class SessionManager {
         if (!sessionFile.exists()) {
             return null; // No session file found
         }
-        try {
-            FileInputStream fis = new FileInputStream(SESSION_FILE);
+        try (FileInputStream fis = new FileInputStream(SESSION_FILE)) {
             props.load(fis);
             sessionUser.id = Integer.parseInt(props.getProperty("id"));
             sessionUser.name = props.getProperty("username");
             sessionUser.email = props.getProperty("email");
             sessionUser.password = props.getProperty("password");
-        } catch (IOException e) {
+        } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
-        } finally {
-            return sessionUser;
         }
+        return sessionUser;
     }
 
     // Clear Session
@@ -68,8 +65,7 @@ public class SessionManager {
         if (sessionFile.exists()) {
             if (sessionFile.canWrite()) {
                 Properties props = new Properties();
-                try {
-                    FileOutputStream fos = new FileOutputStream(SESSION_FILE);
+                try (FileOutputStream fos = new FileOutputStream(SESSION_FILE)) {
                     props.store(fos, "User Session Cleared");
                 } catch (IOException e) {
                     e.printStackTrace();

@@ -10,8 +10,11 @@ import com.wigerlabs.tidetempo.panel.RegisterPanel;
 import com.wigerlabs.tidetempo.util.SessionManager;
 import com.wigerlabs.tidetempo.util.TopBarStyle;
 import com.wigerlabs.tidetempo.util.User;
+import com.wigerlabs.tidetempo.connection.MySQL;
 import java.awt.CardLayout;
 import javax.swing.SwingUtilities;
+import java.sql.ResultSet;
+
 
 /**
  *
@@ -57,10 +60,18 @@ public class AuthScreen extends javax.swing.JFrame {
 
     private synchronized void checkIfUserLoggedIn() {
         User userData = SessionManager.getUserSession();
-        if (userData != null) {
-            if (userData.name != null || userData.email != null || userData.password != null) {
-                homeScreen.setVisible(true);
-                this.dispose();
+        if (userData != null && userData.id != 0) {
+            try {
+                ResultSet rs = MySQL.execute("SELECT id FROM `user` WHERE id='" + userData.id + "'");
+                if (rs != null && rs.next()) {
+                    homeScreen.setVisible(true);
+                    this.dispose();
+                    return;
+                } else {
+                    SessionManager.clearUserSession(); // Invalid session
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

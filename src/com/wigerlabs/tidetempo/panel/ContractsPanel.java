@@ -272,7 +272,7 @@ public class ContractsPanel extends javax.swing.JPanel {
                 } else {
                     MySQL.execute("UPDATE `contract` "
                             + "SET `date` = '" + contractDate + "', "
-                            + "`project_template_id` = '" + projectTemplate.getId() + "', `client_id` = '" + userData.id + "', "
+                            + "`project_template_id` = '" + projectTemplate.getId() + "', `client_id` = '" + client.getId() + "', "
                             + "`payment_schedule_id` = '" + paymentSchedule.getId() + "', `total_amount` = '" + totalProjectAmount + "', "
                             + "`hourly_rate` = '" + hourlyRate + "', `estimated_hours` = '" + estimatedHours + "', "
                             + "`number_of_revisions` = '" + numberOfRevisions + "', `cancellation_policy` = '" + cancellationPolicy + "', "

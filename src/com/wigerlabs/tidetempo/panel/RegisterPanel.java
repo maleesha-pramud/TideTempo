@@ -10,6 +10,7 @@ import com.wigerlabs.tidetempo.gui.AuthScreen;
 import com.wigerlabs.tidetempo.gui.HomeScreen;
 import com.wigerlabs.tidetempo.util.Colors;
 import com.wigerlabs.tidetempo.validation.Validator;
+import com.wigerlabs.tidetempo.util.SessionManager;
 import java.awt.Color;
 import java.sql.SQLException;
 import java.sql.ResultSet;
@@ -332,6 +333,10 @@ public class RegisterPanel extends javax.swing.JPanel {
                         + "VALUES ('" + f_name + "','" + l_name + "','" + email + "','" + password + "','"
                         + mobile + "','" + selectedGenderId + "','" + formatted_hourly_rate + "')"
                 );
+                ResultSet newRs = MySQL.execute("SELECT `id` FROM `user` WHERE email='" + email + "'");
+                if (newRs.next()) {
+                    SessionManager.saveUserSession(newRs.getInt("id"), f_name, email, password);
+                }
                 parent.setVisible(false);
                 homeScreen.setVisible(true);
             }
