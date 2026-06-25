@@ -53,8 +53,8 @@ public class SettingsPanel extends javax.swing.JPanel {
      */
     public SettingsPanel() {
         initComponents();
-        homeScreen = HomeScreen.getInstance();
-        authScreen = AuthScreen.getInstance();
+        // homeScreen = HomeScreen.getInstance();
+        // authScreen = AuthScreen.getInstance();
         loadUserSessionData();
         loadGenders();
         loadUserData();
