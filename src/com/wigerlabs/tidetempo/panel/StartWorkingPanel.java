@@ -60,10 +60,44 @@ public class StartWorkingPanel extends javax.swing.JPanel {
         });
         taskCombo.setEnabled(false);
         finalTimePanel.setVisible(false);
+        
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent evt) {
+                if (!isPlay) {
+                    reloadSelections();
+                }
+            }
+        });
+    }
+
+    private void reloadSelections() {
+        com.wigerlabs.tidetempo.util.ComboItem selectedProject = (com.wigerlabs.tidetempo.util.ComboItem) projectCombo.getSelectedItem();
+        com.wigerlabs.tidetempo.util.ComboItem selectedTask = (com.wigerlabs.tidetempo.util.ComboItem) taskCombo.getSelectedItem();
+
+        loadProjects();
+
+        if (selectedProject != null && selectedProject.getId() != 0) {
+            for (int i = 0; i < projectCombo.getItemCount(); i++) {
+                if (projectCombo.getItemAt(i).getId() == selectedProject.getId()) {
+                    projectCombo.setSelectedIndex(i);
+                    break;
+                }
+            }
+            if (selectedTask != null && selectedTask.getId() != 0) {
+                for (int i = 0; i < taskCombo.getItemCount(); i++) {
+                    if (taskCombo.getItemAt(i).getId() == selectedTask.getId()) {
+                        taskCombo.setSelectedIndex(i);
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     private void loadProjects() {
         projectList = new ArrayList<>();
+        projectCombo.removeAllItems();
         projectCombo.addItem(new ComboItem(0, "Select Project"));
         try {
             ResultSet rs = MySQL.execute("SELECT * FROM `project`");
@@ -384,8 +418,9 @@ public class StartWorkingPanel extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_pauseButtonActionPerformed
 
-    private void projectComboActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_projectComboActionPerformed
+    private void projectComboActionPerformed(java.awt.event.ActionEvent evt) {
         ComboItem project = (ComboItem) projectCombo.getSelectedItem();
+        if (project == null) return;
         int projectId = project.getId();
         if (projectId != 0) {
             loadTasks(projectId);
@@ -393,7 +428,7 @@ public class StartWorkingPanel extends javax.swing.JPanel {
             resetTaskCombo();
             taskCombo.setEnabled(false);
         }
-    }//GEN-LAST:event_projectComboActionPerformed
+    }
 
     private void addToTaskBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addToTaskBtnActionPerformed
         double hoursDouble = seconds / 3600.0;
