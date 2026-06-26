@@ -74,10 +74,10 @@ public class ContractsPanel extends javax.swing.JPanel {
     public ContractsPanel(HomeScreen parent) {
         initComponents();
         this.homeScreen = parent;
+        userData = SessionManager.getUserSession();
         init();
         loadContracts();
         setupActionColumn();
-        userData = SessionManager.getUserSession();
     }
 
     private void init() {
@@ -107,6 +107,14 @@ public class ContractsPanel extends javax.swing.JPanel {
         contentPanel.add(projectDetailsPanel, "project_details_panel");
         contentPanel.add(financialTermsPanel, "financial_terms_panel");
         contentPanel.add(termsAndConditionsPanel, "terms_and_contions_panel");
+        
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent evt) {
+                loadContracts();
+            }
+        });
+        
         SwingUtilities.updateComponentTreeUI(contentPanel);
     }
 
@@ -121,16 +129,20 @@ public class ContractsPanel extends javax.swing.JPanel {
 
         DefaultTableModel dtm = (DefaultTableModel) contractsTable.getModel();
         dtm.setRowCount(0);
+        
+        if (userData == null) return;
+        
         try {
             ResultSet rs = MySQL.execute("SELECT c.id, c.date, pt.name AS project_template, cl.name AS client, p.title AS project_title, pa.name AS payment_schedule, "
                     + "c.total_amount, c.hourly_rate, c.estimated_hours, c.number_of_revisions, c.cancellation_policy, c.intellectual_policy, s.name AS status , c.created_at, c.updated_at "
                     + "FROM contract c "
-                    + "INNER JOIN project_template pt ON c.project_template_id = pt.id "
-                    + "INNER JOIN client cl ON c.client_id = cl.id "
-                    + "INNER JOIN project p ON c.project_id = p.id "
-                    + "INNER JOIN payment_schedule pa ON c.payment_schedule_id = pa.id "
-                    + "INNER JOIN status s ON c.status_id = s.id "
-                    + "ORDER BY p.id ASC");
+                    + "LEFT JOIN project_template pt ON c.project_template_id = pt.id "
+                    + "LEFT JOIN client cl ON c.client_id = cl.id "
+                    + "LEFT JOIN project p ON c.project_id = p.id "
+                    + "LEFT JOIN payment_schedule pa ON c.payment_schedule_id = pa.id "
+                    + "LEFT JOIN status s ON c.status_id = s.id "
+                    + "WHERE p.user_id='" + userData.id + "' "
+                    + "ORDER BY c.id ASC");
 
             while (rs.next()) {
                 Vector<String> row = new Vector<>();
@@ -141,10 +153,10 @@ public class ContractsPanel extends javax.swing.JPanel {
                 row.add(rs.getString("project_title"));
                 row.add(rs.getString("total_amount"));
                 String status = rs.getString("status");
-                row.add(status);
+                row.add(status == null ? "Pending" : status);
                 dtm.addRow(row);
                 totalContractsValue += rs.getInt("total_amount");
-                if (status.equalsIgnoreCase("signed")) {
+                if (status != null && status.equalsIgnoreCase("signed")) {
                     signedContracts++;
                 } else {
                     pendingSignature++;
@@ -264,10 +276,10 @@ public class ContractsPanel extends javax.swing.JPanel {
                 if (!isEditing) {
                     MySQL.execute("INSERT INTO `contract` (date, project_template_id, client_id, "
                             + "project_id, payment_schedule_id, total_amount, hourly_rate, estimated_hours, number_of_revisions, "
-                            + "cancellation_policy, intellectual_policy, created_at) VALUES "
+                            + "cancellation_policy, intellectual_policy, status_id, created_at) VALUES "
                             + "('" + contractDate + "','" + projectTemplate.getId() + "','" + client.getId() + "','"
                             + contractId + "','" + paymentSchedule.getId() + "','" + totalProjectAmount + "','" + hourlyRate + "','"
-                            + estimatedHours + "','" + numberOfRevisions + "','" + cancellationPolicy + "','" + intellectualPropertyRights + "','" + nowTime + "')");
+                            + estimatedHours + "','" + numberOfRevisions + "','" + cancellationPolicy + "','" + intellectualPropertyRights + "','1','" + nowTime + "')");
                     System.out.println("Contract added successfully!");
                 } else {
                     MySQL.execute("UPDATE `contract` "
@@ -280,6 +292,11 @@ public class ContractsPanel extends javax.swing.JPanel {
                             + "WHERE `project_id` = '" + contractId + "'");
                     System.out.println("Contract updated successfully!");
                 }
+                
+                SwingUtilities.invokeLater(() -> {
+                    loadContracts();
+                });
+                
             } catch (SQLException e) {
                 JOptionPane.showMessageDialog(this, "Please try again to add the same project.", "Project adding failed!", JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
