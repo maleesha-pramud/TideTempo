@@ -70,6 +70,8 @@ public class DashboardPanel extends javax.swing.JPanel {
         }catch(SQLException e) {
             e.printStackTrace();
         }
+        
+        loadDynamicLists();
     }
 
 
@@ -583,6 +585,112 @@ public class DashboardPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
 
+    private void loadDynamicLists() {
+        jPanel14.removeAll();
+        jPanel15.removeAll();
+        
+        try {
+            com.wigerlabs.tidetempo.util.User userData = com.wigerlabs.tidetempo.util.SessionManager.getUserSession();
+            if (userData == null) return;
+            
+            // Upcoming Deadlines
+            java.sql.ResultSet rsDeadlines = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT p.title, c.name AS client_name, s.name AS status_name, p.created_at, p.estimated_hours, DATE_ADD(p.created_at, INTERVAL p.estimated_hours HOUR) AS deadline "
+                    + "FROM project p "
+                    + "INNER JOIN client c ON p.client_id = c.id "
+                    + "INNER JOIN status s ON p.status_id = s.id "
+                    + "WHERE p.status_id IN (1, 2) AND p.estimated_hours > 0 AND p.user_id='" + userData.id + "' "
+                    + "ORDER BY deadline ASC LIMIT 5");
+            while (rsDeadlines.next()) {
+                String title = rsDeadlines.getString("title");
+                String client = rsDeadlines.getString("client_name");
+                String statusStr = rsDeadlines.getString("status_name");
+                java.sql.Timestamp deadline = rsDeadlines.getTimestamp("deadline");
+                
+                long diff = deadline.getTime() - System.currentTimeMillis();
+                boolean isLate = diff < 0;
+                String daysStr = formatTimeLeft(diff);
+                
+                com.wigerlabs.tidetempo.components.dashboard.UpcommingDeadline ud = new com.wigerlabs.tidetempo.components.dashboard.UpcommingDeadline();
+                ud.setData(title, client, statusStr, daysStr, isLate);
+                jPanel14.add(ud);
+            }
+            
+            // Active Projects
+            java.sql.ResultSet rsActive = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT p.id, p.title, c.name AS client_name, s.name AS status_name, p.estimated_hours, u.hourly_rate "
+                    + "FROM project p "
+                    + "INNER JOIN client c ON p.client_id = c.id "
+                    + "INNER JOIN status s ON p.status_id = s.id "
+                    + "INNER JOIN user u ON p.user_id = u.id "
+                    + "WHERE p.status_id IN (1, 2) AND p.user_id='" + userData.id + "' "
+                    + "ORDER BY p.updated_at DESC LIMIT 5");
+            while (rsActive.next()) {
+                int pid = rsActive.getInt("id");
+                String title = rsActive.getString("title");
+                String client = rsActive.getString("client_name");
+                String statusStr = rsActive.getString("status_name");
+                double estHours = rsActive.getDouble("estimated_hours");
+                double hourlyRate = rsActive.getDouble("hourly_rate");
+                
+                // Get time logs
+                java.sql.ResultSet rsTime = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT IFNULL(SUM(tl.minutes), 0) AS total_minutes FROM time_log tl INNER JOIN task t ON tl.task_id = t.id WHERE t.project_id='" + pid + "'");
+                int totalMinutes = 0;
+                if (rsTime.next()) totalMinutes = rsTime.getInt("total_minutes");
+                
+                double hoursSpent = totalMinutes / 60.0;
+                double earnings = hoursSpent * hourlyRate;
+                
+                int progress = estHours > 0 ? (int) ((hoursSpent / estHours) * 100) : 0;
+                if (progress > 100) progress = 100;
+                
+                boolean isLate = estHours > 0 && hoursSpent > estHours;
+                
+                // days left from created_at
+                java.sql.ResultSet rsCreated = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT DATE_ADD(created_at, INTERVAL estimated_hours HOUR) AS deadline FROM project WHERE id='" + pid + "'");
+                String daysLeftStr = "N/A";
+                if (rsCreated.next() && estHours > 0) {
+                    java.sql.Timestamp deadline = rsCreated.getTimestamp("deadline");
+                    long diff = deadline.getTime() - System.currentTimeMillis();
+                    daysLeftStr = formatTimeLeft(diff);
+                }
+                
+                String earningsStr = String.format("LKR %,.2f", earnings);
+                String hoursStr = String.format("%.1fh/%.1fh", hoursSpent, estHours);
+                
+                com.wigerlabs.tidetempo.components.dashboard.ActiveProject ap = new com.wigerlabs.tidetempo.components.dashboard.ActiveProject();
+                ap.setData(title, client, statusStr, progress, daysLeftStr, earningsStr, hoursStr, isLate);
+                jPanel15.add(ap);
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        jPanel14.revalidate();
+        jPanel14.repaint();
+        jPanel15.revalidate();
+        jPanel15.repaint();
+    }
+    
+    private String formatTimeLeft(long diff) {
+        long diffAbs = Math.abs(diff);
+        int daysLeft = (int) (diffAbs / (1000 * 60 * 60 * 24));
+        int hoursLeft = (int) ((diffAbs / (1000 * 60 * 60)) % 24);
+        
+        String timeStr = "";
+        if (daysLeft > 0) {
+            timeStr = daysLeft + "d " + hoursLeft + "h";
+        } else if (hoursLeft > 0) {
+            timeStr = hoursLeft + "h";
+        } else {
+            timeStr = "Due Now";
+        }
+        
+        if (diff < 0 && !timeStr.equals("Due Now")) {
+            timeStr += " ago";
+        }
+        return timeStr;
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.wigerlabs.tidetempo.components.dashboard.ActiveProject activeProject1;
     private com.wigerlabs.tidetempo.components.dashboard.ActiveProject activeProject2;
@@ -632,3 +740,5 @@ public class DashboardPanel extends javax.swing.JPanel {
     private com.wigerlabs.tidetempo.components.dashboard.UpcommingDeadline upcommingDeadline4;
     // End of variables declaration//GEN-END:variables
 }
+
+// Force rebuild

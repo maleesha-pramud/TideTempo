@@ -34,6 +34,7 @@ public class ProjectAddEditDialog extends javax.swing.JDialog {
     private boolean isEditing = false;
     private int projectId = 1;
     private ProjectsPanel projectsPanel;
+    private double currentEstimatedHours = 0;
 
     /**
      * Creates new form ProjectAddDialog
@@ -78,7 +79,7 @@ public class ProjectAddEditDialog extends javax.swing.JDialog {
     
     private void loadProjectData() {
         try {
-            ResultSet rs = MySQL.execute("SELECT p.title, p.description, pr.id AS priority_id, pr.name AS priority, c.id AS client_id, c.name AS client "
+            ResultSet rs = MySQL.execute("SELECT p.title, p.description, p.estimated_hours, pr.id AS priority_id, pr.name AS priority, c.id AS client_id, c.name AS client "
                     + "FROM project p "
                     + "INNER JOIN priority pr ON p.priority_id = pr.id "
                     + "INNER JOIN client c ON p.client_id = c.id "
@@ -86,6 +87,8 @@ public class ProjectAddEditDialog extends javax.swing.JDialog {
             if (rs.next()) {
                 titleField.setText(rs.getString("title"));
                 descriptionArea.setText(rs.getString("description"));
+                currentEstimatedHours = rs.getDouble("estimated_hours");
+                estimatedHoursField.setText(String.valueOf(currentEstimatedHours));
                 
                 for (ComboItem p : priorityList) {
                     if (p.getName().equals(rs.getString("priority"))) {
@@ -164,6 +167,11 @@ public class ProjectAddEditDialog extends javax.swing.JDialog {
         descriptionLabel = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         descriptionArea = new javax.swing.JTextArea();
+        estimatedHoursField = new javax.swing.JTextField();
+        estimatedHoursLabel = new javax.swing.JLabel();
+
+        estimatedHoursLabel.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        estimatedHoursLabel.setText("Estimated Duration (Hours)");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Add New Project");
@@ -214,11 +222,13 @@ public class ProjectAddEditDialog extends javax.swing.JDialog {
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(priorityCombo, 0, 293, Short.MAX_VALUE)
+                            .addComponent(estimatedHoursField, 0, 293, Short.MAX_VALUE)
                             .addComponent(titleField)
                             .addComponent(clientCombo, 0, 293, Short.MAX_VALUE)
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(priorityLabel)
+                                    .addComponent(estimatedHoursLabel)
                                     .addComponent(titleLabel)
                                     .addComponent(headerLabel)
                                     .addComponent(clientLabel)
@@ -247,6 +257,10 @@ public class ProjectAddEditDialog extends javax.swing.JDialog {
                 .addComponent(priorityLabel)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(priorityCombo, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(estimatedHoursLabel)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(estimatedHoursField, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(30, 30, 30)
                 .addComponent(projectButton, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(33, Short.MAX_VALUE))
@@ -285,14 +299,23 @@ public class ProjectAddEditDialog extends javax.swing.JDialog {
             return;
         }
         
+        double estimatedHours = 0;
+        try {
+            estimatedHours = Double.parseDouble(estimatedHoursField.getText());
+            if (estimatedHours < 0) throw new NumberFormatException();
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Invalid estimated hours.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
         try {
             if (!isEditing) {
-                MySQL.execute("INSERT INTO `project` (title, description, priority_id, user_id, client_id, status_id, created_at) VALUES "
-                        + "('" + project_title + "','" + project_description + "','" + priority.getId() + "','" + userData.id + "','" + client.getId() + "','" + 1 + "','" + nowTime + "')");
+                MySQL.execute("INSERT INTO `project` (title, description, priority_id, user_id, client_id, status_id, created_at, estimated_hours) VALUES "
+                        + "('" + project_title + "','" + project_description + "','" + priority.getId() + "','" + userData.id + "','" + client.getId() + "','" + 1 + "','" + nowTime + "'," + estimatedHours + ")");
                 SuccessDialog.show("Project added successfully!");
             } else {
                 MySQL.execute("UPDATE `project` "
-                        + " SET title='" + project_title + "', description='" + project_description + "', priority_id='" + priority.getId() + "', client_id='" + client.getId() + "', updated_at='" + nowTime + "' WHERE id='" + projectId + "'");
+                        + " SET title='" + project_title + "', description='" + project_description + "', priority_id='" + priority.getId() + "', client_id='" + client.getId() + "', estimated_hours=" + estimatedHours + ", updated_at='" + nowTime + "' WHERE id='" + projectId + "'");
                 SuccessDialog.show("Project updated successfully!");
             }
             if (projectsPanel != null) {
@@ -313,6 +336,8 @@ public class ProjectAddEditDialog extends javax.swing.JDialog {
     private javax.swing.JLabel clientLabel;
     private javax.swing.JTextArea descriptionArea;
     private javax.swing.JLabel descriptionLabel;
+    private javax.swing.JTextField estimatedHoursField;
+    private javax.swing.JLabel estimatedHoursLabel;
     private javax.swing.JLabel headerLabel;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;

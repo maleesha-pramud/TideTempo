@@ -29,6 +29,23 @@ public class ActiveProject extends javax.swing.JPanel {
         dayCountLabel.setIcon(new FlatSVGIcon("com/wigerlabs/tidetempo/img/calendar.svg", 15, 15));
         companyNameLabel.setIcon(new FlatSVGIcon("com/wigerlabs/tidetempo/img/users_icon.svg", 15, 15));
     }
+    
+    public void setData(String title, String client, String statusStr, int progress, String daysLeft, String earnings, String hoursSpentAndTotal, boolean isLate) {
+        jLabel1.setText(title);
+        companyNameLabel.setText(client);
+        statusBtn.setText(statusStr);
+        jProgressBar1.setValue(progress);
+        jLabel3.setText(progress + "%");
+        dayCountLabel.setText(daysLeft);
+        dayCountLabel1.setText(earnings);
+        dayCountLabel2.setText(hoursSpentAndTotal);
+
+        if (isLate) {
+            dayCountLabel.setForeground(Color.RED);
+        } else {
+            dayCountLabel.setForeground(new Color(0, 153, 0));
+        }
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.

@@ -30,6 +30,25 @@ public class UpcommingDeadline extends javax.swing.JPanel {
         icon.setColorFilter(new FlatSVGIcon.ColorFilter(color -> Color.RED));
         dayCountLabel.setIcon(icon);
     }
+    
+    public void setData(String title, String client, String statusStr, String daysLeft, boolean isLate) {
+        jLabel1.setText(title);
+        jLabel2.setText(client);
+        statusBtn.setText(statusStr);
+        dayCountLabel.setText(daysLeft);
+        
+        if (isLate) {
+            dayCountLabel.setForeground(Color.RED);
+            FlatSVGIcon icon = new FlatSVGIcon("com/wigerlabs/tidetempo/img/clock_icon.svg", 18, 18);
+            icon.setColorFilter(new FlatSVGIcon.ColorFilter(color -> Color.RED));
+            dayCountLabel.setIcon(icon);
+        } else {
+            dayCountLabel.setForeground(new Color(0, 153, 0));
+            FlatSVGIcon icon = new FlatSVGIcon("com/wigerlabs/tidetempo/img/clock_icon.svg", 18, 18);
+            icon.setColorFilter(new FlatSVGIcon.ColorFilter(color -> new Color(0, 153, 0)));
+            dayCountLabel.setIcon(icon);
+        }
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
