@@ -400,4 +400,6 @@ public class HomeScreen extends javax.swing.JFrame {
     private javax.swing.JButton startWorkingBtn;
     private javax.swing.JButton tasksBtn;
     // End of variables declaration//GEN-END:variables
-}
+} 
+
+// Force rebuild
