@@ -33,16 +33,10 @@ public class StartWorkingPanel extends javax.swing.JPanel {
     private boolean isPlay = false;
     private List<ComboItem> projectList;
     private List<ComboItem> taskList;
-    private final User userData;
-
-    /**
-     * Creates new form ProjectsPanel
-     */
     public StartWorkingPanel() {
         initComponents();
         init();
         loadProjects();
-        userData = SessionManager.getUserSession();
     }
 
     private void init() {

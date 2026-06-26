@@ -63,7 +63,7 @@ public class ContractsPanel extends javax.swing.JPanel {
     private ProjectDetailsPanel projectDetailsPanel;
     private FinancialTermsPanel financialTermsPanel;
     private TermsAndConditionsPanel termsAndConditionsPanel;
-    private final User userData;
+
     private boolean isEditing;
 
     /**
@@ -74,7 +74,7 @@ public class ContractsPanel extends javax.swing.JPanel {
     public ContractsPanel(HomeScreen parent) {
         initComponents();
         this.homeScreen = parent;
-        userData = SessionManager.getUserSession();
+
         init();
         loadContracts();
         setupActionColumn();
@@ -130,6 +130,7 @@ public class ContractsPanel extends javax.swing.JPanel {
         DefaultTableModel dtm = (DefaultTableModel) contractsTable.getModel();
         dtm.setRowCount(0);
         
+        User userData = SessionManager.getUserSession();
         if (userData == null) return;
         
         try {
@@ -345,6 +346,7 @@ public class ContractsPanel extends javax.swing.JPanel {
                 parameters.put("termination", cancellationPolicy);
                 parameters.put("intellectualProperty", intellectualPropertyRights);
                 parameters.put("clientEmail", client.getEmail());
+                User userData = SessionManager.getUserSession();
                 parameters.put("userName", userData.name);
                 parameters.put("userEmail", userData.email);
 
@@ -371,6 +373,7 @@ public class ContractsPanel extends javax.swing.JPanel {
 
         try {
             if (!isEditing) {
+                User userData = SessionManager.getUserSession();
                 MySQL.execute("INSERT INTO `project` (title, description, priority_id, user_id, client_id, status_id, created_at) VALUES "
                         + "('" + projectTitle + "','" + projectDescription + "','" + 1 + "','"
                         + userData.id + "','" + client.getId() + "','" + 4 + "','" + nowTime + "')");

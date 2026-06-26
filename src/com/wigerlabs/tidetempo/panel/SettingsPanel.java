@@ -62,6 +62,13 @@ public class SettingsPanel extends javax.swing.JPanel {
         } else {
             System.out.println("SettingsPanel initialized without an active user session.");
         }
+
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent evt) {
+                refreshPanelData();
+            }
+        });
     }
 
     private void loadUserSessionData() {

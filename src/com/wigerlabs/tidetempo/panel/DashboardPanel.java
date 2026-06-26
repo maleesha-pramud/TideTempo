@@ -20,7 +20,6 @@ import java.sql.ResultSet;
 public class DashboardPanel extends javax.swing.JPanel {
 
     private HomeScreen homeScreen;
-    private final User userData;
 
     /**
      * Creates new form ProjectsPanel
@@ -32,7 +31,13 @@ public class DashboardPanel extends javax.swing.JPanel {
         this.homeScreen = parent;
         init();
         loadCardData();
-        userData = SessionManager.getUserSession();
+
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent evt) {
+                loadCardData();
+            }
+        });
     }
     
     private void init() {
