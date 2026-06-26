@@ -40,22 +40,32 @@ public class SessionManager {
 
     // Retrieve user data from session.properties
     public static User getUserSession() {
-        Properties props = new Properties();
         File sessionFile = new File(SESSION_FILE);
-        User sessionUser = new User();
         if (!sessionFile.exists()) {
             return null; // No session file found
         }
+
+        Properties props = new Properties();
         try (FileInputStream fis = new FileInputStream(SESSION_FILE)) {
             props.load(fis);
-            sessionUser.id = Integer.parseInt(props.getProperty("id"));
+
+            String idStr = props.getProperty("id");
+            if (idStr == null || idStr.trim().isEmpty()) {
+                return null;
+            }
+
+            User sessionUser = new User();
+            sessionUser.id = Integer.parseInt(idStr.trim());
             sessionUser.name = props.getProperty("username");
             sessionUser.email = props.getProperty("email");
             sessionUser.password = props.getProperty("password");
+            
+            return sessionUser;
+
         } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
+            return null;
         }
-        return sessionUser;
     }
 
     // Clear Session

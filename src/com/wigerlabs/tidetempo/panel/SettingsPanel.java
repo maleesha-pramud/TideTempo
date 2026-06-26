@@ -53,15 +53,26 @@ public class SettingsPanel extends javax.swing.JPanel {
      */
     public SettingsPanel() {
         initComponents();
-        // homeScreen = HomeScreen.getInstance();
-        // authScreen = AuthScreen.getInstance();
         loadUserSessionData();
         loadGenders();
-        loadUserData();
+        
+        // Add this null-guard wrapper!
+        if (this.userData != null) {
+            loadUserData();
+        } else {
+            System.out.println("SettingsPanel initialized without an active user session.");
+        }
     }
 
     private void loadUserSessionData() {
         userData = SessionManager.getUserSession();
+    }
+    
+    public void refreshPanelData() {
+        loadUserSessionData(); // Reload session property values from file
+        if (this.userData != null) {
+            loadUserData(); // Query database and populate text fields
+        }
     }
 
     public void loadUserData() {
