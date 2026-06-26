@@ -52,6 +52,13 @@ public class TasksPanel extends javax.swing.JPanel {
         header.setPreferredSize(new Dimension(0, 50));
         Border border = BorderFactory.createLineBorder(Colors.LIGHT_BLUE);
         tableScrollPane.setBorder(border);
+        
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent evt) {
+                loadTasks();
+            }
+        });
     }
 
     public synchronized void loadTasks() {
