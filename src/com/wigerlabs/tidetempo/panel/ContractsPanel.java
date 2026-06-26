@@ -184,8 +184,50 @@ public class ContractsPanel extends javax.swing.JPanel {
 
             @Override
             public void onView(int contractId) {
-                ContractViewDialog contractViewDialog = new ContractViewDialog(homeScreen, true, contractId);
-                contractViewDialog.setVisible(true);
+                try {
+                    ResultSet rs = MySQL.execute("SELECT cl.name AS clientName, cl.email AS clientEmail, c.date AS contractDate, pt.name AS projectTemplate, "
+                            + "p.title AS projectName, p.description AS projectDescription, c.total_amount AS totalProjectAmount, "
+                            + "c.hourly_rate AS hourlyRate, c.estimated_hours AS estimatedHours, pa.name AS paymentSchedule, "
+                            + "c.number_of_revisions AS numberOfRevisions, c.cancellation_policy AS cancellationPolicy, "
+                            + "c.intellectual_policy AS intellectualPropertyRights, CONCAT(u.f_name, ' ', u.l_name) AS userName, u.email AS userEmail "
+                            + "FROM contract c "
+                            + "LEFT JOIN client cl ON c.client_id = cl.id "
+                            + "LEFT JOIN project_template pt ON c.project_template_id = pt.id "
+                            + "LEFT JOIN project p ON c.project_id = p.id "
+                            + "LEFT JOIN payment_schedule pa ON c.payment_schedule_id = pa.id "
+                            + "LEFT JOIN user u ON p.user_id = u.id "
+                            + "WHERE c.id = '" + contractId + "'");
+                    
+                    if (rs.next()) {
+                        java.io.InputStream filePath = getClass().getClassLoader().getResourceAsStream("com/wigerlabs/tidetempo/report/SoftwareAgreement.jrxml");
+                        java.util.HashMap<String, Object> parameters = new java.util.HashMap<>();
+
+                        parameters.put("clientName", rs.getString("clientName"));
+                        parameters.put("contractDate", rs.getString("contractDate"));
+                        parameters.put("projectTemplate", rs.getString("projectTemplate"));
+                        parameters.put("projectName", rs.getString("projectName"));
+                        parameters.put("projectDescription", rs.getString("projectDescription"));
+                        parameters.put("totalProjectAmount", rs.getDouble("totalProjectAmount"));
+                        parameters.put("hourlyRate", rs.getDouble("hourlyRate"));
+                        parameters.put("estimatedHours", rs.getDouble("estimatedHours"));
+                        parameters.put("paymentSchedule", rs.getString("paymentSchedule"));
+                        parameters.put("numberOfRevisions", rs.getDouble("numberOfRevisions"));
+                        parameters.put("termination", rs.getString("cancellationPolicy"));
+                        parameters.put("intellectualProperty", rs.getString("intellectualPropertyRights"));
+                        parameters.put("clientEmail", rs.getString("clientEmail"));
+                        parameters.put("userName", rs.getString("userName"));
+                        parameters.put("userEmail", rs.getString("userEmail"));
+
+                        net.sf.jasperreports.engine.JasperReport compileReport = net.sf.jasperreports.engine.JasperCompileManager.compileReport(filePath);
+                        net.sf.jasperreports.engine.JasperPrint fillReport = net.sf.jasperreports.engine.JasperFillManager.fillReport(compileReport, parameters, new net.sf.jasperreports.engine.JREmptyDataSource());
+                        net.sf.jasperreports.view.JasperViewer.viewReport(fillReport, false);
+                    } else {
+                        javax.swing.JOptionPane.showMessageDialog(homeScreen, "Contract data not found.", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    javax.swing.JOptionPane.showMessageDialog(homeScreen, "Failed to generate report.", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+                }
             }
 
             @Override
@@ -326,7 +368,7 @@ public class ContractsPanel extends javax.swing.JPanel {
                 JasperReport compileReport = JasperCompileManager.compileReport(filePath);
 
                 JasperPrint fillReport = JasperFillManager.fillReport(compileReport, parameters, new JREmptyDataSource());
-                JasperViewer.viewReport(fillReport);
+                JasperViewer.viewReport(fillReport, false);
             } catch (JRException e) {
                 e.printStackTrace();
             }
