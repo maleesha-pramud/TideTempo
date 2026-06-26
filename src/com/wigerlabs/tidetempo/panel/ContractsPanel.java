@@ -156,10 +156,10 @@ public class ContractsPanel extends javax.swing.JPanel {
                 String status = rs.getString("status");
                 row.add(status == null ? "Pending" : status);
                 dtm.addRow(row);
-                totalContractsValue += rs.getInt("total_amount");
                 if (status != null && status.equalsIgnoreCase("signed")) {
                     signedContracts++;
-                } else {
+                    totalContractsValue += rs.getInt("total_amount");
+                } else if (status == null || status.equalsIgnoreCase("pending")) {
                     pendingSignature++;
                 }
             }
@@ -258,16 +258,17 @@ public class ContractsPanel extends javax.swing.JPanel {
         contractsTable.getColumnModel().getColumn(7).setCellRenderer(new ActionTableCellRender(6));
         contractsTable.getColumnModel().getColumn(7).setCellEditor(new ActionTableCellEditor(event, 6));
 
-        javax.swing.JComboBox<String> statusCombo = new javax.swing.JComboBox<>(new String[]{"Pending", "In Progress", "Completed", "Cancelled", "Signed"});
+        javax.swing.JComboBox<String> statusCombo = new javax.swing.JComboBox<>(new String[]{"Pending", "Signed", "Cancelled"});
         statusCombo.addItemListener(e -> {
             if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
                 int row = contractsTable.getSelectedRow();
                 if (row != -1) {
                     String contractId = contractsTable.getValueAt(row, 0).toString();
                     String newStatus = (String) e.getItem();
-                    int statusId = newStatus.equals("Pending") ? 1 : newStatus.equals("In Progress") ? 2 : newStatus.equals("Completed") ? 3 : newStatus.equals("Signed") ? 5 : 4;
+                    int statusId = newStatus.equals("Pending") ? 1 : newStatus.equals("Signed") ? 5 : 4;
                     try {
                         MySQL.execute("UPDATE contract SET status_id='" + statusId + "' WHERE id='" + contractId + "'");
+                        SwingUtilities.invokeLater(() -> loadContracts());
                     } catch(Exception ex) { ex.printStackTrace(); }
                 }
             }
