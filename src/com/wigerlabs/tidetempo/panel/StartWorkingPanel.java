@@ -431,18 +431,25 @@ public class StartWorkingPanel extends javax.swing.JPanel {
     }
 
     private void addToTaskBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addToTaskBtnActionPerformed
-        double hoursDouble = seconds / 3600.0;
+        int loggedMinutes = seconds / 60;
         ComboItem task = (ComboItem) taskCombo.getSelectedItem();
         ComboItem project = (ComboItem) projectCombo.getSelectedItem();
 
-        if (!Validator.isComboBoxValid("Project Combo", project.getId())) {
+        if (project == null || !Validator.isComboBoxValid("Project Combo", project.getId())) {
             return;
-        } else if (!Validator.isComboBoxValid("Task Combo", task.getId())) {
+        } else if (task == null || !Validator.isComboBoxValid("Task Combo", task.getId())) {
+            return;
+        }
+
+        User currentUser = SessionManager.getUserSession();
+        if (currentUser == null || currentUser.id == 0) {
+            JOptionPane.showMessageDialog(this, "Invalid user session. Please login again.", "Session Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         try {
-            MySQL.execute("INSERT INTO `time_log` (user_id, task_id, hours) VALUES ('" + userData.id + "', '" + task.getId() + "', '" + hoursDouble + "')");
+            MySQL.execute("INSERT INTO `time_log` (user_id, task_id, minutes) VALUES ('" + currentUser.id + "', '" + task.getId() + "', '" + loggedMinutes + "')");
+            MySQL.execute("UPDATE `task` SET `start_time` = NOW() WHERE `id` = '" + task.getId() + "' AND `start_time` IS NULL");
             SuccessDialog.show("Time added to the task successfully!");
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Please recheck the task and try again.", "Time adding failed!", JOptionPane.ERROR_MESSAGE);

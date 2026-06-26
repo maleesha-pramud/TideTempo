@@ -129,7 +129,6 @@ CREATE TABLE IF NOT EXISTS `task` (
     `title` VARCHAR(150) NOT NULL,
     `start_time` DATETIME,
     `end_time` DATETIME,
-    `total_time_minutes` INT DEFAULT 0,
     `project_id` INT,
     `status_id` INT,
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -145,7 +144,7 @@ CREATE TABLE IF NOT EXISTS `time_log` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT,
     `task_id` INT,
-    `hours` DECIMAL(8, 2),
+    `minutes` INT DEFAULT 0,
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`task_id`) REFERENCES `task`(`id`) ON DELETE CASCADE

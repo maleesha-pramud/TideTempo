@@ -36,7 +36,7 @@ public class TaskViewDialog extends javax.swing.JDialog {
     
     private void loadProjectData() {
         try {
-            ResultSet rs = MySQL.execute("SELECT t.title, p.title AS project, t.start_time, t.end_time, t.total_time_minutes, t.created_at, t.updated_at, s.name AS status "
+            ResultSet rs = MySQL.execute("SELECT t.title, p.title AS project, t.start_time, t.end_time, IFNULL((SELECT SUM(minutes) FROM time_log WHERE task_id = t.id), 0) AS total_time_minutes, t.created_at, t.updated_at, s.name AS status "
                     + "FROM task t "
                     + "INNER JOIN project p ON t.project_id = p.id "
                     + "INNER JOIN status s ON t.status_id = s.id "
@@ -48,7 +48,12 @@ public class TaskViewDialog extends javax.swing.JDialog {
                 projectLabel2.setText(rs.getString("project"));
                 startAtLabel2.setText(rs.getString("start_time"));
                 endAtLabel2.setText(rs.getString("end_time"));
-                totalTimeLabel2.setText(rs.getString("total_time_minutes"));
+                
+                int totalMins = rs.getInt("total_time_minutes");
+                int hrs = totalMins / 60;
+                int mins = totalMins % 60;
+                totalTimeLabel2.setText(hrs > 0 ? hrs + "h " + mins + "m" : mins + "m");
+                
                 createdAtLabel2.setText(rs.getString("created_at"));
                 updatedAtLabel2.setText(rs.getString("updated_at"));
                 statusLabel2.setText(rs.getString("status"));

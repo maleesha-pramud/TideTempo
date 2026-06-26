@@ -53,10 +53,14 @@ public class DashboardPanel extends javax.swing.JPanel {
         try {
             ResultSet rs = MySQL.execute("SELECT "
                     + "(SELECT COUNT(*) FROM `client`) AS client_count, "
-                    + "(SELECT COUNT(*) FROM `project`) AS project_count ");
+                    + "(SELECT COUNT(*) FROM `project`) AS project_count, "
+                    + "(SELECT SUM(minutes) FROM `time_log`) AS total_minutes");
             if(rs.next()) {
                 totalClientsLabel.setText(rs.getString("client_count"));
                 activeProjectsLabel.setText(rs.getString("project_count"));
+                int totalMinutes = rs.getInt("total_minutes");
+                double hours = totalMinutes / 60.0;
+                jLabel9.setText(String.format("%.1f", hours));
             }
         }catch(SQLException e) {
             e.printStackTrace();

@@ -63,7 +63,7 @@ public class TasksPanel extends javax.swing.JPanel {
         DefaultTableModel dtm = (DefaultTableModel) tasksTable.getModel();
         dtm.setRowCount(0);
         try {
-            ResultSet rs = MySQL.execute("SELECT t.id, t.title, t.start_time, t.end_time, t.total_time_minutes, p.title AS project, s.name AS status, t.created_at, t.updated_at "
+            ResultSet rs = MySQL.execute("SELECT t.id, t.title, t.start_time, t.end_time, IFNULL((SELECT SUM(minutes) FROM time_log WHERE task_id = t.id), 0) AS total_time_minutes, p.title AS project, s.name AS status, t.created_at, t.updated_at "
                     + "FROM task t "
                     + "INNER JOIN project p ON t.project_id = p.id "
                     + "INNER JOIN status s ON t.status_id = s.id "
@@ -76,7 +76,12 @@ public class TasksPanel extends javax.swing.JPanel {
                 row.add(rs.getString("project"));
                 row.add(rs.getString("start_time"));
                 row.add(rs.getString("end_time"));
-                row.add(rs.getString("total_time_minutes"));
+                
+                int totalMins = rs.getInt("total_time_minutes");
+                int hrs = totalMins / 60;
+                int mins = totalMins % 60;
+                row.add(hrs > 0 ? hrs + "h " + mins + "m" : mins + "m");
+                
                 row.add(rs.getString("created_at"));
                 row.add(rs.getString("updated_at"));
                 row.add(rs.getString("status"));
@@ -136,8 +141,14 @@ public class TasksPanel extends javax.swing.JPanel {
                     try {
                         ResultSet rs = MySQL.execute("SELECT status_id FROM task WHERE id='" + taskId + "'");
                         if (rs.next()) {
-                            int statusId = rs.getInt("status_id") == 1 ? 2 : 1;
+                            int currentStatus = rs.getInt("status_id");
+                            int statusId = (currentStatus == 1) ? 2 : (currentStatus == 2) ? 3 : 1;
                             MySQL.execute("UPDATE task SET status_id='" + statusId + "' WHERE id='" + taskId + "'");
+                            if (statusId == 3) {
+                                MySQL.execute("UPDATE task SET end_time=NOW() WHERE id='" + taskId + "'");
+                            } else {
+                                MySQL.execute("UPDATE task SET end_time=NULL WHERE id='" + taskId + "'");
+                            }
                             SwingUtilities.invokeLater(() -> {
                                 loadTasks();
                                 SuccessDialog.show("Task status have changed successfully!");
