@@ -675,12 +675,15 @@ public class DashboardPanel extends javax.swing.JPanel {
         long diffAbs = Math.abs(diff);
         int daysLeft = (int) (diffAbs / (1000 * 60 * 60 * 24));
         int hoursLeft = (int) ((diffAbs / (1000 * 60 * 60)) % 24);
+        int minutesLeft = (int) ((diffAbs / (1000 * 60)) % 60);
         
         String timeStr = "";
         if (daysLeft > 0) {
-            timeStr = daysLeft + "d " + hoursLeft + "h";
+            timeStr = daysLeft + "d " + hoursLeft + "h " + minutesLeft + "m";
         } else if (hoursLeft > 0) {
-            timeStr = hoursLeft + "h";
+            timeStr = hoursLeft + "h " + minutesLeft + "m";
+        } else if (minutesLeft > 0) {
+            timeStr = minutesLeft + "m";
         } else {
             timeStr = "Due Now";
         }
