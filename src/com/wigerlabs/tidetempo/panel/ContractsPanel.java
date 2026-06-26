@@ -253,42 +253,25 @@ public class ContractsPanel extends javax.swing.JPanel {
                 }
             }
 
-            @Override
-            public void onStatusChange(int contractId) {
-                ConfirmationDialog.show("Are you sure you want to change the status?");
-                int confirmationAnswer = ConfirmationDialog.getResult();
-                if (confirmationAnswer == 0) {
-                    try {
-                        ResultSet rs = MySQL.execute("SELECT status_id FROM contract WHERE id='" + contractId + "'");
-                        if (rs.next()) {
-                            int statusId = rs.getInt("status_id") == 3 ? 4 : 3;
-                            MySQL.execute("UPDATE contract SET status_id='" + statusId + "' WHERE id='" + contractId + "'");
-                            SwingUtilities.invokeLater(() -> {
-                                loadContracts();
-                                SuccessDialog.show("Contract status have changed successfully!");
-                            });
-                        } else {
-                            JOptionPane.showMessageDialog(
-                                    homeScreen,
-                                    "Status change failed. Please try again later.",
-                                    "Failed to load contract status!",
-                                    JOptionPane.ERROR_MESSAGE
-                            );
-                        }
-                    } catch (SQLException e) {
-                        JOptionPane.showMessageDialog(
-                                homeScreen,
-                                "Contract Status Updating Failed! Please try again later.",
-                                "Contract Status Updating Failed!",
-                                JOptionPane.ERROR_MESSAGE
-                        );
-                        e.printStackTrace();
-                    }
-                }
-            }
         };
         contractsTable.getColumnModel().getColumn(7).setCellRenderer(new ActionTableCellRender(6));
         contractsTable.getColumnModel().getColumn(7).setCellEditor(new ActionTableCellEditor(event, 6));
+
+        javax.swing.JComboBox<String> statusCombo = new javax.swing.JComboBox<>(new String[]{"Pending", "In Progress", "Completed", "Cancelled", "Signed"});
+        statusCombo.addItemListener(e -> {
+            if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
+                int row = contractsTable.getSelectedRow();
+                if (row != -1) {
+                    String contractId = contractsTable.getValueAt(row, 0).toString();
+                    String newStatus = (String) e.getItem();
+                    int statusId = newStatus.equals("Pending") ? 1 : newStatus.equals("In Progress") ? 2 : newStatus.equals("Completed") ? 3 : newStatus.equals("Signed") ? 5 : 4;
+                    try {
+                        MySQL.execute("UPDATE contract SET status_id='" + statusId + "' WHERE id='" + contractId + "'");
+                    } catch(Exception ex) { ex.printStackTrace(); }
+                }
+            }
+        });
+        contractsTable.getColumnModel().getColumn(6).setCellEditor(new javax.swing.DefaultCellEditor(statusCombo));
     }
 
     public JPanel getContentPanel() {
@@ -497,7 +480,7 @@ public class ContractsPanel extends javax.swing.JPanel {
                 java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, true
+                false, false, false, false, false, false, true, true
             };
 
             public Class getColumnClass(int columnIndex) {

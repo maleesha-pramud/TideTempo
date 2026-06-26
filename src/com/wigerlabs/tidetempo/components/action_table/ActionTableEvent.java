@@ -15,6 +15,4 @@ public interface ActionTableEvent {
     public void onView(int projectId);
 
     public void onDelete(int projectId);
-    
-    public void onStatusChange(int projectId);
 }

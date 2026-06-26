@@ -140,48 +140,30 @@ public class TasksPanel extends javax.swing.JPanel {
                 }
             }
 
-            @Override
-            public void onStatusChange(int taskId) {
-                ConfirmationDialog.show("Are you sure you want to change the status?");
-                int confirmationAnswer = ConfirmationDialog.getResult();
-                if (confirmationAnswer == 0) {
-                    try {
-                        ResultSet rs = MySQL.execute("SELECT status_id FROM task WHERE id='" + taskId + "'");
-                        if (rs.next()) {
-                            int currentStatus = rs.getInt("status_id");
-                            int statusId = (currentStatus == 1) ? 2 : (currentStatus == 2) ? 3 : 1;
-                            MySQL.execute("UPDATE task SET status_id='" + statusId + "' WHERE id='" + taskId + "'");
-                            if (statusId == 3) {
-                                MySQL.execute("UPDATE task SET end_time=NOW() WHERE id='" + taskId + "'");
-                            } else {
-                                MySQL.execute("UPDATE task SET end_time=NULL WHERE id='" + taskId + "'");
-                            }
-                            SwingUtilities.invokeLater(() -> {
-                                loadTasks();
-                                SuccessDialog.show("Task status have changed successfully!");
-                            });
-                        } else {
-                            JOptionPane.showMessageDialog(
-                                    homeScreen,
-                                    "Status change failed. Please try again later.",
-                                    "Failed to load task status!",
-                                    JOptionPane.ERROR_MESSAGE
-                            );
-                        }
-                    } catch (SQLException e) {
-                        JOptionPane.showMessageDialog(
-                                homeScreen,
-                                "Task Status Updating Failed! Please try again later.",
-                                "Task Status Updating Failed!",
-                                JOptionPane.ERROR_MESSAGE
-                        );
-                        e.printStackTrace();
-                    }
-                }
-            }
         };
         tasksTable.getColumnModel().getColumn(9).setCellRenderer(new ActionTableCellRender(8));
         tasksTable.getColumnModel().getColumn(9).setCellEditor(new ActionTableCellEditor(event, 8));
+        
+        javax.swing.JComboBox<String> statusCombo = new javax.swing.JComboBox<>(new String[]{"Pending", "In Progress", "Completed", "Cancelled"});
+        statusCombo.addItemListener(e -> {
+            if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
+                int row = tasksTable.getSelectedRow();
+                if (row != -1) {
+                    String taskId = tasksTable.getValueAt(row, 0).toString();
+                    String newStatus = (String) e.getItem();
+                    int statusId = newStatus.equals("Pending") ? 1 : newStatus.equals("In Progress") ? 2 : newStatus.equals("Completed") ? 3 : 4;
+                    try {
+                        MySQL.execute("UPDATE task SET status_id='" + statusId + "' WHERE id='" + taskId + "'");
+                        if (statusId == 3) {
+                            MySQL.execute("UPDATE task SET end_time=NOW() WHERE id='" + taskId + "'");
+                        } else {
+                            MySQL.execute("UPDATE task SET end_time=NULL WHERE id='" + taskId + "'");
+                        }
+                    } catch(Exception ex) { ex.printStackTrace(); }
+                }
+            }
+        });
+        tasksTable.getColumnModel().getColumn(8).setCellEditor(new javax.swing.DefaultCellEditor(statusCombo));
     }
 
     /**
@@ -216,7 +198,7 @@ public class TasksPanel extends javax.swing.JPanel {
                 java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, true
+                false, false, false, false, false, false, false, false, true, true
             };
 
             public Class getColumnClass(int columnIndex) {

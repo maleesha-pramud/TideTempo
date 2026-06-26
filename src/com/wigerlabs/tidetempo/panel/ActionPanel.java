@@ -16,25 +16,9 @@ import javax.swing.SwingUtilities;
 public class ActionPanel extends javax.swing.JPanel {
 
     private int projectId;
-    private int statusId;
-
-    /**
-     * Creates new form ActionPanel
-     */
-    public ActionPanel(int projectId, int statusId) {
+    public ActionPanel(int projectId) {
         initComponents();
         this.projectId = projectId;
-        this.statusId = statusId;
-        changeStatus();
-    }
-
-    private void changeStatus() {
-        if (statusId == 1 || statusId == 3) {
-            statusBtn.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/wigerlabs/tidetempo/img/false.png")));
-        } else {
-            statusBtn.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/wigerlabs/tidetempo/img/true.png")));
-        }
-        SwingUtilities.updateComponentTreeUI(this);
     }
 
     public void initEvent(ActionTableEvent event) {
@@ -57,12 +41,6 @@ public class ActionPanel extends javax.swing.JPanel {
                 event.onDelete(projectId);
             }
         });
-        statusBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                event.onStatusChange(projectId);
-            }
-        });
     }
 
     /**
@@ -77,7 +55,6 @@ public class ActionPanel extends javax.swing.JPanel {
         editBtn = new com.wigerlabs.tidetempo.components.action_table.ActionButton();
         viewBtn = new com.wigerlabs.tidetempo.components.action_table.ActionButton();
         deleteBtn = new com.wigerlabs.tidetempo.components.action_table.ActionButton();
-        statusBtn = new com.wigerlabs.tidetempo.components.action_table.ActionButton();
 
         editBtn.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/wigerlabs/tidetempo/img/edit_icon.png"))); // NOI18N
 
@@ -95,13 +72,6 @@ public class ActionPanel extends javax.swing.JPanel {
             }
         });
 
-        statusBtn.setIcon(new javax.swing.ImageIcon(getClass().getResource("/com/wigerlabs/tidetempo/img/reload.png"))); // NOI18N
-        statusBtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                statusBtnActionPerformed(evt);
-            }
-        });
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -113,8 +83,6 @@ public class ActionPanel extends javax.swing.JPanel {
                 .addComponent(viewBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(deleteBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(statusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -122,7 +90,6 @@ public class ActionPanel extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(statusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(deleteBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(viewBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(editBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -138,15 +105,10 @@ public class ActionPanel extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_deleteBtnActionPerformed
 
-    private void statusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_statusBtnActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_statusBtnActionPerformed
-
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private com.wigerlabs.tidetempo.components.action_table.ActionButton deleteBtn;
     private com.wigerlabs.tidetempo.components.action_table.ActionButton editBtn;
-    private com.wigerlabs.tidetempo.components.action_table.ActionButton statusBtn;
     private com.wigerlabs.tidetempo.components.action_table.ActionButton viewBtn;
     // End of variables declaration//GEN-END:variables
 }

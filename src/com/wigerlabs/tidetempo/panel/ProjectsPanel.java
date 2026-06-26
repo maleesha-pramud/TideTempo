@@ -126,42 +126,25 @@ public class ProjectsPanel extends javax.swing.JPanel {
                 }
             }
 
-            @Override
-            public void onStatusChange(int projectId) {
-                ConfirmationDialog.show("Are you sure you want to change the status?");
-                int confirmationAnswer = ConfirmationDialog.getResult();
-                if (confirmationAnswer == 0) {
-                    try {
-                        ResultSet rs = MySQL.execute("SELECT status_id FROM project WHERE id='" + projectId + "'");
-                        if (rs.next()) {
-                            int statusId = rs.getInt("status_id") == 1 ? 2 : 1;
-                            MySQL.execute("UPDATE project SET status_id='" + statusId + "' WHERE id='" + projectId + "'");
-                            SwingUtilities.invokeLater(() -> {
-                                loadProjects();
-                                SuccessDialog.show("Project status have changed successfully!");
-                            });
-                        } else {
-                            JOptionPane.showMessageDialog(
-                                    homeScreen,
-                                    "Status change failed. Please try again later.",
-                                    "Failed to load project status!",
-                                    JOptionPane.ERROR_MESSAGE
-                            );
-                        }
-                    } catch (SQLException e) {
-                        JOptionPane.showMessageDialog(
-                                homeScreen,
-                                "Project Status Updating Failed! Please try again later.",
-                                "Project Status Updating Failed!",
-                                JOptionPane.ERROR_MESSAGE
-                        );
-                        e.printStackTrace();
-                    }
-                }
-            }
         };
         projectsTable.getColumnModel().getColumn(7).setCellRenderer(new ActionTableCellRender(6));
         projectsTable.getColumnModel().getColumn(7).setCellEditor(new ActionTableCellEditor(event, 6));
+
+        javax.swing.JComboBox<String> statusCombo = new javax.swing.JComboBox<>(new String[]{"Pending", "In Progress", "Completed", "Cancelled"});
+        statusCombo.addItemListener(e -> {
+            if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
+                int row = projectsTable.getSelectedRow();
+                if (row != -1) {
+                    String projectId = projectsTable.getValueAt(row, 0).toString();
+                    String newStatus = (String) e.getItem();
+                    int statusId = newStatus.equals("Pending") ? 1 : newStatus.equals("In Progress") ? 2 : newStatus.equals("Completed") ? 3 : 4;
+                    try {
+                        MySQL.execute("UPDATE project SET status_id='" + statusId + "' WHERE id='" + projectId + "'");
+                    } catch(Exception ex) { ex.printStackTrace(); }
+                }
+            }
+        });
+        projectsTable.getColumnModel().getColumn(6).setCellEditor(new javax.swing.DefaultCellEditor(statusCombo));
     }
 
     /**
@@ -196,7 +179,7 @@ public class ProjectsPanel extends javax.swing.JPanel {
                 java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, true
+                false, false, false, false, false, false, true, true
             };
 
             public Class getColumnClass(int columnIndex) {

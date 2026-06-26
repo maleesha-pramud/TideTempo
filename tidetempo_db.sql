@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS `client` (
     `email` VARCHAR(100),
     `phone` VARCHAR(20),
     `user_id` INT,
+    `status_id` INT DEFAULT 1,
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE

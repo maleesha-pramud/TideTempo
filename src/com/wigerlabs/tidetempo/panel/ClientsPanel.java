@@ -64,7 +64,7 @@ public class ClientsPanel extends javax.swing.JPanel {
         DefaultTableModel dtm = (DefaultTableModel) clientsTable.getModel();
         dtm.setRowCount(0);
         try {
-            ResultSet rs = MySQL.execute("SELECT c.id, c.name, c.company, c.email, c.phone, c.created_at, c.updated_at "
+            ResultSet rs = MySQL.execute("SELECT c.id, c.name, c.company, c.email, c.phone, c.status_id, c.created_at, c.updated_at "
                     + "FROM client c "
                     + "ORDER BY c.id ASC");
 
@@ -77,6 +77,7 @@ public class ClientsPanel extends javax.swing.JPanel {
                 row.add(rs.getString("phone"));
                 row.add(rs.getString("created_at"));
                 row.add(rs.getString("updated_at"));
+                row.add(rs.getInt("status_id") == 1 ? "Active" : "Inactive");
                 dtm.addRow(row);
             }
             SwingUtilities.updateComponentTreeUI(clientsTable);
@@ -129,42 +130,25 @@ public class ClientsPanel extends javax.swing.JPanel {
                 }
             }
 
-            @Override
-            public void onStatusChange(int clientId) {
-//                ConfirmationDialog.show("Are you sure you want to change the status?");
-//                int confirmationAnswer = ConfirmationDialog.getResult();
-//                if (confirmationAnswer == 0) {
-//                    try {
-//                        ResultSet rs = MySQL.execute("SELECT status_id FROM project WHERE id='" + clientId + "'");
-//                        if (rs.next()) {
-//                            int statusId = rs.getInt("status_id") == 1 ? 2 : 1;
-//                            MySQL.execute("UPDATE project SET status_id='" + statusId + "' WHERE id='" + clientId + "'");
-//                            SwingUtilities.invokeLater(() -> {
-//                                loadClients();
-//                                SuccessDialog.show("Project status have changed successfully!");
-//                            });
-//                        } else {
-//                            JOptionPane.showMessageDialog(
-//                                    homeScreen,
-//                                    "Status change failed. Please try again later.",
-//                                    "Failed to load project status!",
-//                                    JOptionPane.ERROR_MESSAGE
-//                            );
-//                        }
-//                    } catch (SQLException e) {
-//                        JOptionPane.showMessageDialog(
-//                                homeScreen,
-//                                "Project Status Updating Failed! Please try again later.",
-//                                "Project Status Updating Failed!",
-//                                JOptionPane.ERROR_MESSAGE
-//                        );
-//                        e.printStackTrace();
-//                    }
-//                }
-            }
         };
-        clientsTable.getColumnModel().getColumn(7).setCellRenderer(new ActionTableCellRender(6));
-        clientsTable.getColumnModel().getColumn(7).setCellEditor(new ActionTableCellEditor(event, 6));
+        clientsTable.getColumnModel().getColumn(8).setCellRenderer(new ActionTableCellRender(7));
+        clientsTable.getColumnModel().getColumn(8).setCellEditor(new ActionTableCellEditor(event, 7));
+
+        javax.swing.JComboBox<String> statusCombo = new javax.swing.JComboBox<>(new String[]{"Active", "Inactive"});
+        statusCombo.addItemListener(e -> {
+            if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
+                int row = clientsTable.getSelectedRow();
+                if (row != -1) {
+                    String clientId = clientsTable.getValueAt(row, 0).toString();
+                    String newStatus = (String) e.getItem();
+                    int statusId = newStatus.equals("Active") ? 1 : 2;
+                    try {
+                        MySQL.execute("UPDATE client SET status_id='" + statusId + "' WHERE id='" + clientId + "'");
+                    } catch(Exception ex) { ex.printStackTrace(); }
+                }
+            }
+        });
+        clientsTable.getColumnModel().getColumn(7).setCellEditor(new javax.swing.DefaultCellEditor(statusCombo));
     }
 
     /**
@@ -192,14 +176,14 @@ public class ClientsPanel extends javax.swing.JPanel {
 
             },
             new String [] {
-                "#", "Name", "Company", "Email", "Phone", "Added at", "Updated at", "Actions"
+                "#", "Name", "Company", "Email", "Phone", "Added at", "Updated at", "Status", "Actions"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, true
+                false, false, false, false, false, false, false, true, true
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -217,8 +201,8 @@ public class ClientsPanel extends javax.swing.JPanel {
         tableScrollPane.setViewportView(clientsTable);
         if (clientsTable.getColumnModel().getColumnCount() > 0) {
             clientsTable.getColumnModel().getColumn(0).setMaxWidth(50);
-            clientsTable.getColumnModel().getColumn(7).setMinWidth(180);
-            clientsTable.getColumnModel().getColumn(7).setMaxWidth(180);
+            clientsTable.getColumnModel().getColumn(8).setMinWidth(180);
+            clientsTable.getColumnModel().getColumn(8).setMaxWidth(180);
         }
 
         addClientBtn.setBackground(new java.awt.Color(59, 130, 246));
