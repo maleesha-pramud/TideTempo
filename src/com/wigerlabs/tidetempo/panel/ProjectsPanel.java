@@ -102,29 +102,62 @@ public class ProjectsPanel extends javax.swing.JPanel {
                 try {
                     java.sql.ResultSet rs = com.wigerlabs.tidetempo.connection.MySQL.execute(
                             "SELECT p.title AS projectName, p.description AS projectDescription, " +
-                            "c.name AS clientName, p.estimated_hours AS estimatedHours, s.name AS status " +
+                            "c.name AS clientName, p.estimated_hours AS estimatedHours, s.name AS status, u.hourly_rate AS hourlyRate " +
                             "FROM project p " +
                             "INNER JOIN client c ON p.client_id = c.id " +
                             "INNER JOIN status s ON p.status_id = s.id " +
+                            "INNER JOIN user u ON p.user_id = u.id " +
                             "WHERE p.id = '" + projectId + "'");
 
                     if (rs.next()) {
                         java.io.InputStream filePath = getClass().getClassLoader().getResourceAsStream("com/wigerlabs/tidetempo/report/ProjectReport.jrxml");
                         java.util.HashMap<String, Object> parameters = new java.util.HashMap<>();
+                        
+                        double estimatedHours = rs.getDouble("estimatedHours");
+                        double hourlyRate = rs.getDouble("hourlyRate");
 
                         parameters.put("projectName", rs.getString("projectName"));
                         parameters.put("projectDescription", rs.getString("projectDescription"));
                         parameters.put("clientName", rs.getString("clientName"));
-                        parameters.put("estimatedHours", rs.getDouble("estimatedHours"));
                         parameters.put("status", rs.getString("status"));
+                        parameters.put("estimatedHours", estimatedHours > 0 ? String.format("%.1fh", estimatedHours) : "Not Set");
                         
-                        // Calculate total logged hours
+                        // Calculate total logged hours and other metrics
                         java.sql.ResultSet rsTime = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT IFNULL(SUM(tl.minutes), 0) AS total_minutes FROM time_log tl INNER JOIN task t ON tl.task_id = t.id WHERE t.project_id='" + projectId + "'");
-                        double totalLoggedHours = 0;
+                        int totalLoggedMinutes = 0;
                         if (rsTime.next()) {
-                            totalLoggedHours = rsTime.getInt("total_minutes") / 60.0;
+                            totalLoggedMinutes = rsTime.getInt("total_minutes");
                         }
-                        parameters.put("totalLoggedHours", totalLoggedHours);
+                        
+                        double totalLoggedHours = totalLoggedMinutes / 60.0;
+                        
+                        int loggedH = totalLoggedMinutes / 60;
+                        int loggedM = totalLoggedMinutes % 60;
+                        parameters.put("totalLoggedTime", String.format("%dh %dm (%d mins)", loggedH, loggedM, totalLoggedMinutes));
+                        
+                        if (estimatedHours > 0) {
+                            int estMinutes = (int) (estimatedHours * 60);
+                            int remainingMins = estMinutes - totalLoggedMinutes;
+                            if (remainingMins < 0) {
+                                int overH = Math.abs(remainingMins) / 60;
+                                int overM = Math.abs(remainingMins) % 60;
+                                parameters.put("remainingTime", String.format("Overdue by %dh %dm", overH, overM));
+                            } else {
+                                int remH = remainingMins / 60;
+                                int remM = remainingMins % 60;
+                                parameters.put("remainingTime", String.format("%dh %dm", remH, remM));
+                            }
+                            
+                            double completionPct = (totalLoggedHours / estimatedHours) * 100;
+                            if (completionPct > 100) completionPct = 100;
+                            parameters.put("completionPercentage", String.format("%.1f%%", completionPct));
+                        } else {
+                            parameters.put("remainingTime", "N/A");
+                            parameters.put("completionPercentage", "N/A");
+                        }
+                        
+                        double fullCost = totalLoggedHours * hourlyRate;
+                        parameters.put("totalCost", String.format("LKR %,.2f", fullCost));
 
                         // Fetch time log details for JRResultSetDataSource
                         java.sql.ResultSet rsLogs = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT t.title AS task_title, tl.created_at AS log_date, tl.minutes AS logged_minutes FROM time_log tl INNER JOIN task t ON tl.task_id = t.id WHERE t.project_id = '" + projectId + "' ORDER BY tl.created_at DESC");
