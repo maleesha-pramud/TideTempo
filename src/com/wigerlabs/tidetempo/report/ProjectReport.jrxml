@@ -78,7 +78,7 @@
 				<textElement><font size="11" isBold="true"/></textElement>
 				<text><![CDATA[Description:]]></text>
 			</staticText>
-			<textField isStretchWithOverflow="true">
+			<textField textAdjust="StretchHeight">
 				<reportElement x="100" y="95" width="455" height="40" uuid="6d5f2a33-cbb5-47f6-b2c2-06f9119e911f"/>
 				<textElement><font size="11"/></textElement>
 				<textFieldExpression><![CDATA[$P{projectDescription}]]></textFieldExpression>
