@@ -5,7 +5,9 @@
         <group>
             <file>file:/W:/Java%20Projects/TideTempo/src/com/wigerlabs/tidetempo/gui/HomeScreen.java</file>
             <file>file:/W:/Java%20Projects/TideTempo/src/com/wigerlabs/tidetempo/panel/ContractsPanel.java</file>
+            <file>file:/W:/Java%20Projects/TideTempo/src/com/wigerlabs/tidetempo/dialog/ProjectAddEditDialog.java</file>
             <file>file:/W:/Java%20Projects/TideTempo/src/com/wigerlabs/tidetempo/gui/AuthScreen.java</file>
+            <file>file:/W:/Java%20Projects/TideTempo/src/com/wigerlabs/tidetempo/panel/DashboardPanel.java</file>
             <file>file:/W:/Java%20Projects/TideTempo/src/com/wigerlabs/tidetempo/util/SessionManager.java</file>
         </group>
     </open-files>
