@@ -99,8 +99,47 @@ public class ProjectsPanel extends javax.swing.JPanel {
 
             @Override
             public void onView(int projectId) {
-                ProjectViewDialog projectViewDialog = new ProjectViewDialog(homeScreen, true, projectId);
-                projectViewDialog.setVisible(true);
+                try {
+                    java.sql.ResultSet rs = com.wigerlabs.tidetempo.connection.MySQL.execute(
+                            "SELECT p.title AS projectName, p.description AS projectDescription, " +
+                            "c.name AS clientName, p.estimated_hours AS estimatedHours, s.name AS status " +
+                            "FROM project p " +
+                            "INNER JOIN client c ON p.client_id = c.id " +
+                            "INNER JOIN status s ON p.status_id = s.id " +
+                            "WHERE p.id = '" + projectId + "'");
+
+                    if (rs.next()) {
+                        java.io.InputStream filePath = getClass().getClassLoader().getResourceAsStream("com/wigerlabs/tidetempo/report/ProjectReport.jrxml");
+                        java.util.HashMap<String, Object> parameters = new java.util.HashMap<>();
+
+                        parameters.put("projectName", rs.getString("projectName"));
+                        parameters.put("projectDescription", rs.getString("projectDescription"));
+                        parameters.put("clientName", rs.getString("clientName"));
+                        parameters.put("estimatedHours", rs.getDouble("estimatedHours"));
+                        parameters.put("status", rs.getString("status"));
+                        
+                        // Calculate total logged hours
+                        java.sql.ResultSet rsTime = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT IFNULL(SUM(tl.minutes), 0) AS total_minutes FROM time_log tl INNER JOIN task t ON tl.task_id = t.id WHERE t.project_id='" + projectId + "'");
+                        double totalLoggedHours = 0;
+                        if (rsTime.next()) {
+                            totalLoggedHours = rsTime.getInt("total_minutes") / 60.0;
+                        }
+                        parameters.put("totalLoggedHours", totalLoggedHours);
+
+                        // Fetch time log details for JRResultSetDataSource
+                        java.sql.ResultSet rsLogs = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT t.title AS task_title, tl.created_at AS log_date, tl.minutes AS logged_minutes FROM time_log tl INNER JOIN task t ON tl.task_id = t.id WHERE t.project_id = '" + projectId + "' ORDER BY tl.created_at DESC");
+                        
+                        net.sf.jasperreports.engine.JasperReport compileReport = net.sf.jasperreports.engine.JasperCompileManager.compileReport(filePath);
+                        net.sf.jasperreports.engine.JRResultSetDataSource dataSource = new net.sf.jasperreports.engine.JRResultSetDataSource(rsLogs);
+                        net.sf.jasperreports.engine.JasperPrint fillReport = net.sf.jasperreports.engine.JasperFillManager.fillReport(compileReport, parameters, dataSource);
+                        net.sf.jasperreports.view.JasperViewer.viewReport(fillReport, false);
+                    } else {
+                        javax.swing.JOptionPane.showMessageDialog(homeScreen, "Project data not found.", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    javax.swing.JOptionPane.showMessageDialog(homeScreen, "Failed to generate report.", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+                }
             }
 
             @Override
