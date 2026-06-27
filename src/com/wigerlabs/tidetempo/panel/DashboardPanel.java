@@ -17,14 +17,12 @@ import java.sql.ResultSet;
  *
  * @author malee
  */
-public class DashboardPanel extends javax.swing.JPanel {
+public class DashboardPanel extends javax.swing.JPanel implements java.awt.event.ComponentListener {
 
     private HomeScreen homeScreen;
 
     /**
      * Creates new form ProjectsPanel
-     *
-     * @param parent
      */
     public DashboardPanel(HomeScreen parent) {
         initComponents();
@@ -32,13 +30,20 @@ public class DashboardPanel extends javax.swing.JPanel {
         init();
         loadCardData();
 
-        this.addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentShown(java.awt.event.ComponentEvent evt) {
-                loadCardData();
-            }
-        });
+        this.addComponentListener(this);
     }
+    
+    @Override
+    public void componentShown(java.awt.event.ComponentEvent evt) {
+        loadCardData();
+    }
+    
+    @Override
+    public void componentHidden(java.awt.event.ComponentEvent evt) {}
+    @Override
+    public void componentMoved(java.awt.event.ComponentEvent evt) {}
+    @Override
+    public void componentResized(java.awt.event.ComponentEvent evt) {}
     
     private void init() {
         clientsCardPanel.putClientProperty(FlatClientProperties.STYLE, "arc: 20");
@@ -594,21 +599,25 @@ public class DashboardPanel extends javax.swing.JPanel {
             if (userData == null) return;
             
             // Upcoming Deadlines
-            java.sql.ResultSet rsDeadlines = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT p.title, c.name AS client_name, s.name AS status_name, p.created_at, p.estimated_hours, DATE_ADD(p.created_at, INTERVAL p.estimated_hours HOUR) AS deadline "
+            java.sql.ResultSet rsDeadlines = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT p.id, p.title, c.name AS client_name, s.name AS status_name, p.estimated_hours, "
+                    + "IFNULL((SELECT SUM(tl.minutes) FROM time_log tl INNER JOIN task t ON tl.task_id = t.id WHERE t.project_id = p.id), 0) AS total_logged_minutes "
                     + "FROM project p "
                     + "INNER JOIN client c ON p.client_id = c.id "
                     + "INNER JOIN status s ON p.status_id = s.id "
                     + "WHERE p.status_id IN (1, 2) AND p.estimated_hours > 0 AND p.user_id='" + userData.id + "' "
-                    + "ORDER BY deadline ASC LIMIT 5");
+                    + "ORDER BY (p.estimated_hours * 60 - IFNULL((SELECT SUM(tl.minutes) FROM time_log tl INNER JOIN task t ON tl.task_id = t.id WHERE t.project_id = p.id), 0)) ASC LIMIT 5");
             while (rsDeadlines.next()) {
                 String title = rsDeadlines.getString("title");
                 String client = rsDeadlines.getString("client_name");
                 String statusStr = rsDeadlines.getString("status_name");
-                java.sql.Timestamp deadline = rsDeadlines.getTimestamp("deadline");
+                double estHours = rsDeadlines.getDouble("estimated_hours");
+                int totalLoggedMins = rsDeadlines.getInt("total_logged_minutes");
                 
-                long diff = deadline.getTime() - System.currentTimeMillis();
-                boolean isLate = diff < 0;
-                String daysStr = formatTimeLeft(diff);
+                int remainingMins = (int) (estHours * 60) - totalLoggedMins;
+                long diffMillis = remainingMins * 60L * 1000L;
+                
+                boolean isLate = diffMillis < 0;
+                String daysStr = formatTimeLeft(diffMillis);
                 
                 com.wigerlabs.tidetempo.components.dashboard.UpcommingDeadline ud = new com.wigerlabs.tidetempo.components.dashboard.UpcommingDeadline();
                 ud.setData(title, client, statusStr, daysStr, isLate);
@@ -616,7 +625,8 @@ public class DashboardPanel extends javax.swing.JPanel {
             }
             
             // Active Projects
-            java.sql.ResultSet rsActive = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT p.id, p.title, c.name AS client_name, s.name AS status_name, p.estimated_hours, u.hourly_rate "
+            java.sql.ResultSet rsActive = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT p.id, p.title, c.name AS client_name, s.name AS status_name, p.estimated_hours, u.hourly_rate, "
+                    + "IFNULL((SELECT SUM(tl.minutes) FROM time_log tl INNER JOIN task t ON tl.task_id = t.id WHERE t.project_id = p.id), 0) AS total_logged_minutes "
                     + "FROM project p "
                     + "INNER JOIN client c ON p.client_id = c.id "
                     + "INNER JOIN status s ON p.status_id = s.id "
@@ -630,11 +640,7 @@ public class DashboardPanel extends javax.swing.JPanel {
                 String statusStr = rsActive.getString("status_name");
                 double estHours = rsActive.getDouble("estimated_hours");
                 double hourlyRate = rsActive.getDouble("hourly_rate");
-                
-                // Get time logs
-                java.sql.ResultSet rsTime = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT IFNULL(SUM(tl.minutes), 0) AS total_minutes FROM time_log tl INNER JOIN task t ON tl.task_id = t.id WHERE t.project_id='" + pid + "'");
-                int totalMinutes = 0;
-                if (rsTime.next()) totalMinutes = rsTime.getInt("total_minutes");
+                int totalMinutes = rsActive.getInt("total_logged_minutes");
                 
                 double hoursSpent = totalMinutes / 60.0;
                 double earnings = hoursSpent * hourlyRate;
@@ -644,13 +650,11 @@ public class DashboardPanel extends javax.swing.JPanel {
                 
                 boolean isLate = estHours > 0 && hoursSpent > estHours;
                 
-                // days left from created_at
-                java.sql.ResultSet rsCreated = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT DATE_ADD(created_at, INTERVAL estimated_hours HOUR) AS deadline FROM project WHERE id='" + pid + "'");
                 String daysLeftStr = "N/A";
-                if (rsCreated.next() && estHours > 0) {
-                    java.sql.Timestamp deadline = rsCreated.getTimestamp("deadline");
-                    long diff = deadline.getTime() - System.currentTimeMillis();
-                    daysLeftStr = formatTimeLeft(diff);
+                if (estHours > 0) {
+                    int remainingMins = (int) (estHours * 60) - totalMinutes;
+                    long diffMillis = remainingMins * 60L * 1000L;
+                    daysLeftStr = formatTimeLeft(diffMillis);
                 }
                 
                 String earningsStr = String.format("LKR %,.2f", earnings);
