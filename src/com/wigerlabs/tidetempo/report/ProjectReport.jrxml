@@ -9,6 +9,7 @@
 	<parameter name="completionPercentage" class="java.lang.String"/>
 	<parameter name="totalCost" class="java.lang.String"/>
 	<parameter name="status" class="java.lang.String"/>
+	<parameter name="barcodeImage" class="java.awt.Image"/>
 
 	<field name="task_title" class="java.lang.String"/>
 	<field name="log_date" class="java.sql.Timestamp"/>
@@ -23,6 +24,10 @@
 				</textElement>
 				<text><![CDATA[Project Report]]></text>
 			</staticText>
+			<image scaleImage="RetainShape" hAlign="Right" vAlign="Middle">
+				<reportElement x="400" y="5" width="150" height="40" uuid="bc2a1389-1052-446a-8b17-76c243bc6f01"/>
+				<imageExpression><![CDATA[$P{barcodeImage}]]></imageExpression>
+			</image>
 		</band>
 	</title>
 	

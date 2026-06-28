@@ -159,6 +159,12 @@ public class ProjectsPanel extends javax.swing.JPanel {
                         double fullCost = totalLoggedHours * hourlyRate;
                         parameters.put("totalCost", String.format("LKR %,.2f", fullCost));
 
+                        // Generate Barcode
+                        net.sourceforge.barbecue.Barcode barcode = net.sourceforge.barbecue.BarcodeFactory.createCode128("PRJ-" + projectId);
+                        barcode.setFont(new java.awt.Font("Arial", java.awt.Font.PLAIN, 12));
+                        java.awt.image.BufferedImage barcodeImage = net.sourceforge.barbecue.BarcodeImageHandler.getImage(barcode);
+                        parameters.put("barcodeImage", barcodeImage);
+
                         // Fetch time log details for JRResultSetDataSource
                         java.sql.ResultSet rsLogs = com.wigerlabs.tidetempo.connection.MySQL.execute("SELECT t.title AS task_title, tl.created_at AS log_date, tl.minutes AS logged_minutes FROM time_log tl INNER JOIN task t ON tl.task_id = t.id WHERE t.project_id = '" + projectId + "' ORDER BY tl.created_at DESC");
                         
