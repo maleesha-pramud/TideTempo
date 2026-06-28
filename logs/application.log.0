@@ -62,3 +62,9 @@ Caused by: java.io.IOException: CreateProcess error=2, The system cannot find th
 [2026-06-28 09:32:25] [INFO] [com.wigerlabs.tidetempo.util.DatabaseManager.backupDatabase] - Database backup created successfully.
 [2026-06-28 09:33:13] [INFO] [com.wigerlabs.tidetempo.util.DatabaseManager.restoreDatabase] - Starting database restore from: C:\Users\malee\Downloads\Databases\TideTempo\tidetempo_backup.sql
 [2026-06-28 09:33:14] [INFO] [com.wigerlabs.tidetempo.util.DatabaseManager.restoreDatabase] - Database restored successfully.
+[2026-06-28 09:43:43] [INFO] [com.wigerlabs.tidetempo.util.AppLogger.init] - Application Logger initialized successfully.
+[2026-06-28 09:43:43] [INFO] [com.wigerlabs.tidetempo.gui.AuthScreen.main] - Starting TideTempo Application...
+[2026-06-28 09:43:43] [INFO] [com.wigerlabs.tidetempo.connection.MySQL.createConnection] - Database connection established.
+[2026-06-28 10:10:11] [INFO] [com.wigerlabs.tidetempo.util.AppLogger.init] - Application Logger initialized successfully.
+[2026-06-28 10:10:11] [INFO] [com.wigerlabs.tidetempo.gui.AuthScreen.main] - Starting TideTempo Application...
+[2026-06-28 10:10:11] [INFO] [com.wigerlabs.tidetempo.connection.MySQL.createConnection] - Database connection established.
