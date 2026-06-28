@@ -1,5 +1,6 @@
 package com.wigerlabs.tidetempo.connection;
 
+import com.wigerlabs.tidetempo.util.AppLogger;
 import java.sql.ResultSet;
 import java.sql.Connection;
 import java.sql.Statement;
@@ -18,9 +19,10 @@ public class MySQL {
             Class.forName("com.mysql.cj.jdbc.Driver");
             if (connection == null) {
                 connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/" + DATABASE, USERNAME, PASSWORD);
+                AppLogger.getLogger().info("Database connection established.");
             }
         } catch (SQLException | ClassNotFoundException e) {
-            e.printStackTrace();
+            AppLogger.getLogger().log(java.util.logging.Level.SEVERE, "Failed to connect to database", e);
         }
         return connection;
     }

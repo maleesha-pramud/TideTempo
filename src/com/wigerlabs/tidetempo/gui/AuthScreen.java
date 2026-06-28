@@ -11,6 +11,7 @@ import com.wigerlabs.tidetempo.util.SessionManager;
 import com.wigerlabs.tidetempo.util.TopBarStyle;
 import com.wigerlabs.tidetempo.util.User;
 import com.wigerlabs.tidetempo.connection.MySQL;
+import com.wigerlabs.tidetempo.util.AppLogger;
 import java.awt.CardLayout;
 import javax.swing.SwingUtilities;
 import java.sql.ResultSet;
@@ -133,6 +134,9 @@ public class AuthScreen extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
+        AppLogger.init();
+        AppLogger.getLogger().info("Starting TideTempo Application...");
+        
         /* Set the Nimbus look and feel */
         FlatMacDarkLaf.setup();
 

@@ -1,0 +1,6 @@
+[2026-06-28 08:10:01] [INFO] [com.wigerlabs.tidetempo.util.AppLogger.init] - Application Logger initialized successfully.
+[2026-06-28 08:10:01] [INFO] [com.wigerlabs.tidetempo.gui.AuthScreen.main] - Starting TideTempo Application...
+[2026-06-28 08:10:01] [INFO] [com.wigerlabs.tidetempo.connection.MySQL.createConnection] - Database connection established.
+[2026-06-28 08:13:42] [INFO] [com.wigerlabs.tidetempo.util.AppLogger.init] - Application Logger initialized successfully.
+[2026-06-28 08:13:42] [INFO] [com.wigerlabs.tidetempo.gui.AuthScreen.main] - Starting TideTempo Application...
+[2026-06-28 08:13:43] [INFO] [com.wigerlabs.tidetempo.connection.MySQL.createConnection] - Database connection established.
