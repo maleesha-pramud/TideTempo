@@ -51,10 +51,10 @@ public class DatabaseManager {
                 AppLogger.getLogger().info("Database backup created successfully.");
                 return true;
             } else {
-                AppLogger.getLogger().severe("Could not create the database backup. Process exited with code: " + processComplete);
+                AppLogger.getLogger().error("Could not create the database backup. Process exited with code: " + processComplete);
             }
         } catch (IOException | InterruptedException e) {
-            AppLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred during database backup", e);
+            AppLogger.getLogger().error("Exception occurred during database backup", e);
         }
         return false;
     }
@@ -64,7 +64,7 @@ public class DatabaseManager {
         
         File sqlFile = new File(sourceFilePath);
         if (!sqlFile.exists()) {
-            AppLogger.getLogger().severe("Backup file does not exist: " + sourceFilePath);
+            AppLogger.getLogger().error("Backup file does not exist: " + sourceFilePath);
             return false;
         }
 
@@ -85,10 +85,10 @@ public class DatabaseManager {
                 AppLogger.getLogger().info("Database restored successfully.");
                 return true;
             } else {
-                AppLogger.getLogger().severe("Could not restore the database. Process exited with code: " + processComplete);
+                AppLogger.getLogger().error("Could not restore the database. Process exited with code: " + processComplete);
             }
         } catch (IOException | InterruptedException e) {
-            AppLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occurred during database restore", e);
+            AppLogger.getLogger().error("Exception occurred during database restore", e);
         }
         return false;
     }

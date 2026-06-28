@@ -22,7 +22,7 @@ public class MySQL {
                 AppLogger.getLogger().info("Database connection established.");
             }
         } catch (SQLException | ClassNotFoundException e) {
-            AppLogger.getLogger().log(java.util.logging.Level.SEVERE, "Failed to connect to database", e);
+            AppLogger.getLogger().error("Failed to connect to database", e);
         }
         return connection;
     }
