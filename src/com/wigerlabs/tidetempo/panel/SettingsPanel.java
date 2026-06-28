@@ -55,6 +55,7 @@ public class SettingsPanel extends javax.swing.JPanel {
         initComponents();
         loadUserSessionData();
         loadGenders();
+        initDatabaseTab();
         
         // Add this null-guard wrapper!
         if (this.userData != null) {
@@ -69,6 +70,51 @@ public class SettingsPanel extends javax.swing.JPanel {
                 refreshPanelData();
             }
         });
+    }
+
+    private void initDatabaseTab() {
+        javax.swing.JPanel dbPanel = new javax.swing.JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 20, 20));
+        dbPanel.setOpaque(false);
+
+        javax.swing.JButton btnBackup = new javax.swing.JButton("Backup Database");
+        btnBackup.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 14));
+        btnBackup.addActionListener(evt -> {
+            javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
+            fileChooser.setDialogTitle("Save Database Backup");
+            fileChooser.setSelectedFile(new java.io.File("tidetempo_backup.sql"));
+            if (fileChooser.showSaveDialog(this) == javax.swing.JFileChooser.APPROVE_OPTION) {
+                boolean success = com.wigerlabs.tidetempo.util.DatabaseManager.backupDatabase(fileChooser.getSelectedFile().getAbsolutePath());
+                if (success) {
+                    JOptionPane.showMessageDialog(this, "Backup created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to create backup. Ensure MySQL is in your system PATH.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        javax.swing.JButton btnRestore = new javax.swing.JButton("Restore Database");
+        btnRestore.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 14));
+        btnRestore.addActionListener(evt -> {
+            int confirm = JOptionPane.showConfirmDialog(this, "Restoring will overwrite your current database. Are you sure?", "Warning", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
+                fileChooser.setDialogTitle("Select Database Backup File");
+                if (fileChooser.showOpenDialog(this) == javax.swing.JFileChooser.APPROVE_OPTION) {
+                    boolean success = com.wigerlabs.tidetempo.util.DatabaseManager.restoreDatabase(fileChooser.getSelectedFile().getAbsolutePath());
+                    if (success) {
+                        JOptionPane.showMessageDialog(this, "Database restored successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        refreshPanelData();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Failed to restore database. Ensure MySQL is in your system PATH.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        });
+
+        dbPanel.add(btnBackup);
+        dbPanel.add(btnRestore);
+
+        jTabbedPane1.addTab("Database Management", dbPanel);
     }
 
     private void loadUserSessionData() {
