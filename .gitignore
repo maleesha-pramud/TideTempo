@@ -69,3 +69,7 @@ sources.txt
 # Claude Code (local only)
 # ====================================================================
 .claude/settings.local.json
+
+# Keep dependency jars so the project builds after cloning
+!lib/*.jar
+!lib/**/*.jar
