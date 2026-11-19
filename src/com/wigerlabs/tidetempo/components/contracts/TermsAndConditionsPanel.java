@@ -28,6 +28,19 @@ public class TermsAndConditionsPanel extends javax.swing.JPanel {
 
     private void init() {
         generateBtn.setIcon(new FlatSVGIcon("com/wigerlabs/tidetempo/img/download_icon.svg", 25, 25));
+        generateBtn.setText("Generate Contract");
+
+        // Put a "Preview Agreement" button next to "Generate" without touching the generated layout.
+        javax.swing.JButton previewBtn = new javax.swing.JButton("Preview Agreement");
+        previewBtn.setFont(generateBtn.getFont());
+        previewBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        previewBtn.addActionListener(e -> parent.previewAgreement());
+
+        javax.swing.JPanel buttonRow = new javax.swing.JPanel(new java.awt.GridLayout(1, 2, 10, 0));
+        buttonRow.setOpaque(false);
+        ((javax.swing.GroupLayout) basicInfoPanel.getLayout()).replace(generateBtn, buttonRow);
+        buttonRow.add(previewBtn);
+        buttonRow.add(generateBtn);
     }
     
     public JFormattedTextField getNumberOfRevisionsField() {

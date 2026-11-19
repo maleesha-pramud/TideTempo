@@ -144,7 +144,7 @@ public class ContractsPanel extends javax.swing.JPanel {
                     + "LEFT JOIN payment_schedule pa ON c.payment_schedule_id = pa.id "
                     + "LEFT JOIN status s ON c.status_id = s.id "
                     + "WHERE p.user_id='" + userData.id + "' "
-                    + "ORDER BY c.id ASC");
+                    + "ORDER BY c.id DESC");
 
             while (rs.next()) {
                 Vector<String> row = new Vector<>();
@@ -281,7 +281,8 @@ public class ContractsPanel extends javax.swing.JPanel {
         return contentPanel;
     }
 
-    public void generateAgreement() {
+    /** Reads and validates the wizard inputs. Returns null (after warning the user) when invalid. */
+    private ContractData collectContractData() {
         Client client = (Client) basicInfoPanel.getClientCombo().getSelectedItem();
         String contractDate = basicInfoPanel.getContractDatePicker().getDateStringOrEmptyString();
         ComboItem projectTemplate = (ComboItem) basicInfoPanel.getProjectTemplate().getSelectedItem();
@@ -292,111 +293,174 @@ public class ContractsPanel extends javax.swing.JPanel {
         String intellectualPropertyRights = termsAndConditionsPanel.getIntellectualPropertyRightsField().getText().trim();
 
         if (!Validator.isComboBoxValid("Client", client.getId())) {
-            return;
+            return null;
         } else if (contractDate == null || contractDate.isBlank()) {
             WarningDialog.show("Please select a contract date.");
-            return;
+            return null;
         } else if (!Validator.isComboBoxValid("Project Template", projectTemplate.getId())) {
-            return;
+            return null;
         } else if (!Validator.isInputFieldValid("Project Name", projectName) || !Validator.isLengthValid("Project Name", projectName, 150)) {
-            return;
+            return null;
         } else if (!Validator.isInputFieldValid("Project Description", projectDescription) || !Validator.isLengthValid("Project Description", projectDescription, 5000)) {
-            return;
+            return null;
         }
 
         Double totalAmountValue = Validator.parseNumber("Total Project Amount", financialTermsPanel.getTotalProjectAmountField().getText(), 0, 9999999999.99);
         if (totalAmountValue == null) {
-            return;
+            return null;
         }
         Double hourlyRateValue = Validator.parseNumber("Hourly Rate", financialTermsPanel.getHourlyRateField().getText(), 0, 99999999.99);
         if (hourlyRateValue == null) {
-            return;
+            return null;
         }
         Double estimatedHoursValue = Validator.parseNumber("Estimated Hours", financialTermsPanel.getEstimatedHoursField().getText(), 0, 99999999.99);
         if (estimatedHoursValue == null) {
-            return;
+            return null;
         }
         Double revisionsValue = Validator.parseNumber("Number of Revisions", termsAndConditionsPanel.getNumberOfRevisionsField().getText(), 0, 100);
         if (revisionsValue == null) {
-            return;
+            return null;
         }
         if (!Validator.isComboBoxValid("Payment Schedule", paymentSchedule.getId())) {
-            return;
+            return null;
         } else if (!Validator.isInputFieldValid("Cancellation Policy", cancellationPolicy)) {
-            return;
+            return null;
         } else if (!Validator.isInputFieldValid("Intellectual Property Rights", intellectualPropertyRights)) {
-            return;
+            return null;
         }
         double totalProjectAmount = totalAmountValue;
         double hourlyRate = hourlyRateValue;
         double estimatedHours = estimatedHoursValue;
         double numberOfRevisions = revisionsValue;
 
-        Timestamp nowTime = CurrentTimeGenerator.getInstance().getCurrentTime();
+        return new ContractData(client, contractDate, projectTemplate, projectName, projectDescription, paymentSchedule,
+                cancellationPolicy, intellectualPropertyRights, totalProjectAmount, hourlyRate, estimatedHours, numberOfRevisions);
+    }
 
-        int contractId = addEditProject(projectName, projectDescription, client, nowTime);
+    /** Holds the validated contract inputs. */
+    private static class ContractData {
+        final Client client;
+        final String contractDate;
+        final ComboItem projectTemplate;
+        final String projectName;
+        final String projectDescription;
+        final ComboItem paymentSchedule;
+        final String cancellationPolicy;
+        final String intellectualPropertyRights;
+        final double totalProjectAmount;
+        final double hourlyRate;
+        final double estimatedHours;
+        final double numberOfRevisions;
 
-        if (contractId != 0) {
-            try {
-                if (!isEditing) {
-                    MySQL.execute("INSERT INTO `contract` (date, project_template_id, client_id, "
-                            + "project_id, payment_schedule_id, total_amount, hourly_rate, estimated_hours, number_of_revisions, "
-                            + "cancellation_policy, intellectual_policy, status_id, created_at) VALUES "
-                            + "('" + contractDate + "','" + projectTemplate.getId() + "','" + client.getId() + "','"
-                            + contractId + "','" + paymentSchedule.getId() + "','" + totalProjectAmount + "','" + hourlyRate + "','"
-                            + estimatedHours + "','" + numberOfRevisions + "','" + cancellationPolicy + "','" + intellectualPropertyRights + "','1','" + nowTime + "')");
-                    System.out.println("Contract added successfully!");
-                } else {
-                    MySQL.execute("UPDATE `contract` "
-                            + "SET `date` = '" + contractDate + "', "
-                            + "`project_template_id` = '" + projectTemplate.getId() + "', `client_id` = '" + client.getId() + "', "
-                            + "`payment_schedule_id` = '" + paymentSchedule.getId() + "', `total_amount` = '" + totalProjectAmount + "', "
-                            + "`hourly_rate` = '" + hourlyRate + "', `estimated_hours` = '" + estimatedHours + "', "
-                            + "`number_of_revisions` = '" + numberOfRevisions + "', `cancellation_policy` = '" + cancellationPolicy + "', "
-                            + "`intellectual_policy` = '" + intellectualPropertyRights + "', `updated_at` = '" + nowTime + "' "
-                            + "WHERE `project_id` = '" + contractId + "'");
-                    System.out.println("Contract updated successfully!");
-                }
-                
-                SwingUtilities.invokeLater(() -> {
-                    loadContracts();
-                });
-                
-            } catch (SQLException e) {
-                JOptionPane.showMessageDialog(this, "Please try again to add the same project.", "Project adding failed!", JOptionPane.ERROR_MESSAGE);
-                e.printStackTrace();
-            }
-
-            try {
-                InputStream filePath = getClass().getClassLoader().getResourceAsStream("com/wigerlabs/tidetempo/report/SoftwareAgreement.jrxml");
-                HashMap<String, Object> parameters = new HashMap<>();
-
-                // Filling the HashMap with your variables
-                parameters.put("clientName", client.getName());
-                parameters.put("contractDate", contractDate);
-                parameters.put("projectTemplate", projectTemplate.getName());
-                parameters.put("projectName", projectName);
-                parameters.put("projectDescription", projectDescription);
-                parameters.put("totalProjectAmount", totalProjectAmount);
-                parameters.put("hourlyRate", hourlyRate);
-                parameters.put("estimatedHours", estimatedHours);
-                parameters.put("paymentSchedule", paymentSchedule.getName());
-                parameters.put("numberOfRevisions", numberOfRevisions);
-                parameters.put("termination", cancellationPolicy);
-                parameters.put("intellectualProperty", intellectualPropertyRights);
-                parameters.put("clientEmail", client.getEmail());
-                User userData = SessionManager.getUserSession();
-                parameters.put("userName", userData.name);
-                parameters.put("userEmail", userData.email);
-
-                JasperReport compileReport = JasperCompileManager.compileReport(filePath);
-
-                JasperPrint fillReport = JasperFillManager.fillReport(compileReport, parameters, new JREmptyDataSource());
-                JasperViewer.viewReport(fillReport, false);
-            } catch (JRException e) {
-                e.printStackTrace();
-            }
+        ContractData(Client client, String contractDate, ComboItem projectTemplate, String projectName, String projectDescription,
+                ComboItem paymentSchedule, String cancellationPolicy, String intellectualPropertyRights,
+                double totalProjectAmount, double hourlyRate, double estimatedHours, double numberOfRevisions) {
+            this.client = client;
+            this.contractDate = contractDate;
+            this.projectTemplate = projectTemplate;
+            this.projectName = projectName;
+            this.projectDescription = projectDescription;
+            this.paymentSchedule = paymentSchedule;
+            this.cancellationPolicy = cancellationPolicy;
+            this.intellectualPropertyRights = intellectualPropertyRights;
+            this.totalProjectAmount = totalProjectAmount;
+            this.hourlyRate = hourlyRate;
+            this.estimatedHours = estimatedHours;
+            this.numberOfRevisions = numberOfRevisions;
         }
+    }
+
+    /** Shows the agreement for the current inputs without saving anything. */
+    public void previewAgreement() {
+        ContractData data = collectContractData();
+        if (data == null) {
+            return;
+        }
+        try {
+            InputStream filePath = getClass().getClassLoader().getResourceAsStream("com/wigerlabs/tidetempo/report/SoftwareAgreement.jrxml");
+            HashMap<String, Object> parameters = new HashMap<>();
+            parameters.put("clientName", data.client.getName());
+            parameters.put("contractDate", data.contractDate);
+            parameters.put("projectTemplate", data.projectTemplate.getName());
+            parameters.put("projectName", data.projectName);
+            parameters.put("projectDescription", data.projectDescription);
+            parameters.put("totalProjectAmount", data.totalProjectAmount);
+            parameters.put("hourlyRate", data.hourlyRate);
+            parameters.put("estimatedHours", data.estimatedHours);
+            parameters.put("paymentSchedule", data.paymentSchedule.getName());
+            parameters.put("numberOfRevisions", data.numberOfRevisions);
+            parameters.put("termination", data.cancellationPolicy);
+            parameters.put("intellectualProperty", data.intellectualPropertyRights);
+            parameters.put("clientEmail", data.client.getEmail());
+            User userData = SessionManager.getUserSession();
+            parameters.put("userName", userData.name);
+            parameters.put("userEmail", userData.email);
+
+            JasperReport compileReport = JasperCompileManager.compileReport(filePath);
+            JasperPrint fillReport = JasperFillManager.fillReport(compileReport, parameters, new JREmptyDataSource());
+            JasperViewer.viewReport(fillReport, false);
+        } catch (JRException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Failed to generate the agreement preview.", "Preview failed", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /** Saves the contract, clears the wizard and jumps to the "Contract History" tab. */
+    public void generateAgreement() {
+        ContractData data = collectContractData();
+        if (data == null) {
+            return;
+        }
+
+        Timestamp nowTime = CurrentTimeGenerator.getInstance().getCurrentTime();
+        int contractId = addEditProject(data.projectName, data.projectDescription, data.client, nowTime);
+        if (contractId == 0) {
+            return;
+        }
+
+        try {
+            MySQL.execute("INSERT INTO `contract` (date, project_template_id, client_id, "
+                    + "project_id, payment_schedule_id, total_amount, hourly_rate, estimated_hours, number_of_revisions, "
+                    + "cancellation_policy, intellectual_policy, status_id, created_at) VALUES "
+                    + "('" + data.contractDate + "','" + data.projectTemplate.getId() + "','" + data.client.getId() + "','"
+                    + contractId + "','" + data.paymentSchedule.getId() + "','" + data.totalProjectAmount + "','" + data.hourlyRate + "','"
+                    + data.estimatedHours + "','" + data.numberOfRevisions + "','" + data.cancellationPolicy + "','"
+                    + data.intellectualPropertyRights + "','1','" + nowTime + "')");
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Please try again to add the same project.", "Contract adding failed!", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+            return;
+        }
+
+        loadContracts();
+        resetContractForm();
+        jTabbedPane1.setSelectedIndex(1);
+        SuccessDialog.show("Contract generated successfully!");
+    }
+
+    /** Clears every input of the "Generate Contract" wizard and returns it to the first step. */
+    private void resetContractForm() {
+        basicInfoPanel.getClientCombo().setSelectedIndex(0);
+        basicInfoPanel.getContractDatePicker().clear();
+        basicInfoPanel.getProjectTemplate().setSelectedIndex(0);
+
+        projectDetailsPanel.getProjectName().setText("");
+        projectDetailsPanel.getProjectDescription().setText("");
+
+        financialTermsPanel.getTotalProjectAmountField().setValue(null);
+        financialTermsPanel.getTotalProjectAmountField().setText("");
+        financialTermsPanel.getHourlyRateField().setValue(null);
+        financialTermsPanel.getHourlyRateField().setText("");
+        financialTermsPanel.getEstimatedHoursField().setValue(null);
+        financialTermsPanel.getEstimatedHoursField().setText("");
+        financialTermsPanel.getPaymentScheduleCombo().setSelectedIndex(0);
+
+        termsAndConditionsPanel.getNumberOfRevisionsField().setValue(null);
+        termsAndConditionsPanel.getNumberOfRevisionsField().setText("");
+        termsAndConditionsPanel.getCancellationPolicyField().setText("");
+        termsAndConditionsPanel.getIntellectualPropertyRightsField().setText("");
+
+        contentPanelLayout.show(contentPanel, "basicinfo_panel");
     }
 
     private int addEditProject(String projectTitle, String projectDescription, Client client, Timestamp nowTime) {
