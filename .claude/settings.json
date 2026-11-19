@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./build/**)",
+      "Read(./dist/**)",
+      "Read(./lib/**)",
+      "Read(./logs/**)",
+      "Read(./nbproject/private/**)",
+      "Read(./.idea/**)",
+      "Read(./db/**)",
+      "Read(./sources.txt)",
+      "Read(./session.properties)",
+      "Read(./*.iml)",
+      "Read(./**/*.class)",
+      "Read(./**/*.jar)",
+      "Read(./**/*.png)",
+      "Read(./**/*.jpg)",
+      "Read(./**/*.svg)"
+    ]
+  }
+}
