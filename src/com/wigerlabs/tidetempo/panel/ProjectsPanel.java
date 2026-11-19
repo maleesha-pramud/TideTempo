@@ -4,6 +4,7 @@
  */
 package com.wigerlabs.tidetempo.panel;
 
+import com.wigerlabs.tidetempo.components.StatusCellEditor;
 import com.wigerlabs.tidetempo.components.action_table.ActionTableCellEditor;
 import com.wigerlabs.tidetempo.components.action_table.ActionTableCellRender;
 import com.wigerlabs.tidetempo.components.action_table.ActionTableEvent;
@@ -14,14 +15,27 @@ import com.wigerlabs.tidetempo.dialog.ProjectViewDialog;
 import com.wigerlabs.tidetempo.dialog.SuccessDialog;
 import com.wigerlabs.tidetempo.gui.HomeScreen;
 import com.wigerlabs.tidetempo.util.Colors;
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
+import java.util.regex.Pattern;
 import javax.swing.BorderFactory;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
+import javax.swing.RowFilter;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import javax.swing.table.JTableHeader;
 import javax.swing.border.Border;
 
@@ -31,7 +45,12 @@ import javax.swing.border.Border;
  */
 public class ProjectsPanel extends javax.swing.JPanel {
 
+    private static final String[] STATUSES = {"Pending", "In Progress", "Completed", "Cancelled"};
+    private static final Color HIGH_PRIORITY_BG = new Color(88, 28, 36);
+
     private HomeScreen homeScreen;
+    private JTextField searchField;
+    private JTabbedPane statusTabs;
 
     /**
      * Creates new form ProjectsPanel
@@ -52,6 +71,93 @@ public class ProjectsPanel extends javax.swing.JPanel {
         header.setPreferredSize(new Dimension(0, 50));
         Border border = BorderFactory.createLineBorder(Colors.LIGHT_BLUE);
         tableScrollPane.setBorder(border);
+
+        setupToolbar();
+        setupHighlightRenderer();
+    }
+
+    // Replaces the generated layout at runtime with: [search | New Project] / status tabs / table.
+    private void setupToolbar() {
+        removeAll();
+        setLayout(new BorderLayout(0, 8));
+        setBorder(BorderFactory.createEmptyBorder(15, 6, 6, 6));
+
+        searchField = new JTextField();
+        searchField.putClientProperty("JTextField.placeholderText", "Search projects...");
+        searchField.setPreferredSize(new Dimension(0, 35));
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                applyFilter();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                applyFilter();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                applyFilter();
+            }
+        });
+
+        addProjectBtn.setPreferredSize(new Dimension(122, 35));
+        JPanel topRow = new JPanel(new BorderLayout(10, 0));
+        topRow.setOpaque(false);
+        topRow.add(searchField, BorderLayout.CENTER);
+        topRow.add(addProjectBtn, BorderLayout.EAST);
+
+        statusTabs = new JTabbedPane();
+        for (String status : STATUSES) {
+            JPanel empty = new JPanel();
+            empty.setPreferredSize(new Dimension(0, 0));
+            statusTabs.addTab(status, empty);
+        }
+        statusTabs.setSelectedIndex(1); // In Progress by default
+        statusTabs.addChangeListener(e -> applyFilter());
+
+        JPanel north = new JPanel(new BorderLayout(0, 8));
+        north.setOpaque(false);
+        north.add(topRow, BorderLayout.NORTH);
+        north.add(statusTabs, BorderLayout.SOUTH);
+
+        add(north, BorderLayout.NORTH);
+        add(tableScrollPane, BorderLayout.CENTER);
+        applyFilter();
+    }
+
+    // Highlights rows whose priority is High / Urgent.
+    private void setupHighlightRenderer() {
+        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
+            @Override
+            public java.awt.Component getTableCellRendererComponent(javax.swing.JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                java.awt.Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (!isSelected) {
+                    Object priority = table.getModel().getValueAt(table.convertRowIndexToModel(row), 2);
+                    if ("High".equalsIgnoreCase(String.valueOf(priority)) || "Urgent".equalsIgnoreCase(String.valueOf(priority))) {
+                        c.setBackground(HIGH_PRIORITY_BG);
+                    }
+                }
+                return c;
+            }
+        };
+        for (int i = 0; i <= 6; i++) {
+            projectsTable.getColumnModel().getColumn(i).setCellRenderer(renderer);
+        }
+    }
+
+    private void applyFilter() {
+        if (projectsTable == null || !(projectsTable.getRowSorter() instanceof TableRowSorter) || statusTabs == null) {
+            return;
+        }
+        List<RowFilter<Object, Object>> filters = new ArrayList<>();
+        filters.add(RowFilter.regexFilter("^" + Pattern.quote(STATUSES[statusTabs.getSelectedIndex()]) + "$", 6));
+        String text = searchField.getText().trim();
+        if (!text.isEmpty()) {
+            filters.add(RowFilter.regexFilter("(?i)" + Pattern.quote(text), 0, 1, 2, 3, 4, 5, 6));
+        }
+        ((TableRowSorter<DefaultTableModel>) projectsTable.getRowSorter()).setRowFilter(RowFilter.andFilter(filters));
     }
 
     public synchronized void loadProjects() {
@@ -208,21 +314,21 @@ public class ProjectsPanel extends javax.swing.JPanel {
         projectsTable.getColumnModel().getColumn(7).setCellRenderer(new ActionTableCellRender(6));
         projectsTable.getColumnModel().getColumn(7).setCellEditor(new ActionTableCellEditor(event, 6));
 
-        javax.swing.JComboBox<String> statusCombo = new javax.swing.JComboBox<>(new String[]{"Pending", "In Progress", "Completed", "Cancelled"});
-        statusCombo.addItemListener(e -> {
-            if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
-                int row = projectsTable.getSelectedRow();
-                if (row != -1) {
-                    String projectId = projectsTable.getValueAt(row, 0).toString();
-                    String newStatus = (String) e.getItem();
-                    int statusId = newStatus.equals("Pending") ? 1 : newStatus.equals("In Progress") ? 2 : newStatus.equals("Completed") ? 3 : 4;
-                    try {
-                        MySQL.execute("UPDATE project SET status_id='" + statusId + "' WHERE id='" + projectId + "'");
-                    } catch(Exception ex) { ex.printStackTrace(); }
-                }
+        projectsTable.getColumnModel().getColumn(6).setCellEditor(new StatusCellEditor(STATUSES, (projectId, newStatus) -> {
+            try {
+                MySQL.execute("UPDATE project SET status_id=(SELECT id FROM status WHERE name='" + newStatus + "') WHERE id='" + projectId + "'");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(homeScreen, "Failed to update project status. Please try again.", "Status Update Failed", JOptionPane.ERROR_MESSAGE);
+                return false;
             }
-        });
-        projectsTable.getColumnModel().getColumn(6).setCellEditor(new javax.swing.DefaultCellEditor(statusCombo));
+            // Jump to the new status' tab and reload so "Updated at" is fresh.
+            SwingUtilities.invokeLater(() -> {
+                statusTabs.setSelectedIndex(java.util.Arrays.asList(STATUSES).indexOf(newStatus));
+                loadProjects();
+            });
+            return true;
+        }));
     }
 
     /**

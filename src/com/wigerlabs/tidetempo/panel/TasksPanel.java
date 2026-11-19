@@ -4,6 +4,7 @@
  */
 package com.wigerlabs.tidetempo.panel;
 
+import com.wigerlabs.tidetempo.components.StatusCellEditor;
 import com.wigerlabs.tidetempo.components.action_table.ActionTableCellEditor;
 import com.wigerlabs.tidetempo.components.action_table.ActionTableCellRender;
 import com.wigerlabs.tidetempo.components.action_table.ActionTableEvent;
@@ -14,14 +15,29 @@ import com.wigerlabs.tidetempo.dialog.TaskAddEditDialog;
 import com.wigerlabs.tidetempo.dialog.TaskViewDialog;
 import com.wigerlabs.tidetempo.gui.HomeScreen;
 import com.wigerlabs.tidetempo.util.Colors;
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.Vector;
+import java.util.regex.Pattern;
 import javax.swing.BorderFactory;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
+import javax.swing.RowFilter;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import javax.swing.table.JTableHeader;
 import javax.swing.border.Border;
 
@@ -31,7 +47,13 @@ import javax.swing.border.Border;
  */
 public class TasksPanel extends javax.swing.JPanel {
 
+    private static final String[] STATUSES = {"Pending", "In Progress", "Completed", "Cancelled"};
+    private static final Color HIGH_PRIORITY_BG = new Color(88, 28, 36);
+
     private HomeScreen homeScreen;
+    private JTextField searchField;
+    private JTabbedPane statusTabs;
+    private final Set<String> highPriorityTaskIds = new HashSet<>();
 
     /**
      * Creates new form TasksPanel
@@ -59,6 +81,94 @@ public class TasksPanel extends javax.swing.JPanel {
                 loadTasks();
             }
         });
+
+        setupToolbar();
+        setupHighlightRenderer();
+    }
+
+    // Replaces the generated layout at runtime with: [search | New Task] / status tabs / table.
+    private void setupToolbar() {
+        removeAll();
+        setLayout(new BorderLayout(0, 8));
+        setBorder(BorderFactory.createEmptyBorder(15, 6, 6, 6));
+
+        searchField = new JTextField();
+        searchField.putClientProperty("JTextField.placeholderText", "Search tasks...");
+        searchField.setPreferredSize(new Dimension(0, 35));
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                applyFilter();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                applyFilter();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                applyFilter();
+            }
+        });
+
+        addTaskBtn.setPreferredSize(new Dimension(122, 35));
+        JPanel topRow = new JPanel(new BorderLayout(10, 0));
+        topRow.setOpaque(false);
+        topRow.add(searchField, BorderLayout.CENTER);
+        topRow.add(addTaskBtn, BorderLayout.EAST);
+
+        statusTabs = new JTabbedPane();
+        for (String status : STATUSES) {
+            JPanel empty = new JPanel();
+            empty.setPreferredSize(new Dimension(0, 0));
+            statusTabs.addTab(status, empty);
+        }
+        statusTabs.setSelectedIndex(1); // In Progress by default
+        statusTabs.addChangeListener(e -> applyFilter());
+
+        JPanel north = new JPanel(new BorderLayout(0, 8));
+        north.setOpaque(false);
+        north.add(topRow, BorderLayout.NORTH);
+        north.add(statusTabs, BorderLayout.SOUTH);
+
+        add(north, BorderLayout.NORTH);
+        add(tableScrollPane, BorderLayout.CENTER);
+        applyFilter();
+    }
+
+    // Highlights rows whose project has High / Urgent priority.
+    private void setupHighlightRenderer() {
+        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
+            @Override
+            public java.awt.Component getTableCellRendererComponent(javax.swing.JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                java.awt.Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (!isSelected) {
+                    String id = String.valueOf(table.getModel().getValueAt(table.convertRowIndexToModel(row), 0));
+                    if (highPriorityTaskIds.contains(id)) {
+                        c.setBackground(HIGH_PRIORITY_BG);
+                    }
+                }
+                return c;
+            }
+        };
+        for (int i = 0; i <= 8; i++) {
+            tasksTable.getColumnModel().getColumn(i).setCellRenderer(renderer);
+        }
+    }
+
+    private void applyFilter() {
+        if (tasksTable == null || !(tasksTable.getRowSorter() instanceof TableRowSorter) || statusTabs == null) {
+            return;
+        }
+        TableRowSorter<?> sorter = (TableRowSorter<?>) tasksTable.getRowSorter();
+        List<RowFilter<Object, Object>> filters = new ArrayList<>();
+        filters.add(RowFilter.regexFilter("^" + Pattern.quote(STATUSES[statusTabs.getSelectedIndex()]) + "$", 8));
+        String text = searchField.getText().trim();
+        if (!text.isEmpty()) {
+            filters.add(RowFilter.regexFilter("(?i)" + Pattern.quote(text), 0, 1, 2, 3, 4, 5, 6, 7, 8));
+        }
+        ((TableRowSorter<DefaultTableModel>) sorter).setRowFilter(RowFilter.andFilter(filters));
     }
 
     public synchronized void loadTasks() {
@@ -69,11 +179,14 @@ public class TasksPanel extends javax.swing.JPanel {
 
         DefaultTableModel dtm = (DefaultTableModel) tasksTable.getModel();
         dtm.setRowCount(0);
+        highPriorityTaskIds.clear();
         try {
-            ResultSet rs = MySQL.execute("SELECT t.id, t.title, t.start_time, t.end_time, IFNULL((SELECT SUM(minutes) FROM time_log WHERE task_id = t.id), 0) AS total_time_minutes, p.title AS project, s.name AS status, t.created_at, t.updated_at "
+            ResultSet rs = MySQL.execute("SELECT t.id, t.title, t.start_time, t.end_time, IFNULL((SELECT SUM(minutes) FROM time_log WHERE task_id = t.id), 0) AS total_time_minutes, p.title AS project, s.name AS status, pr.name AS priority, t.created_at, t.updated_at "
                     + "FROM task t "
                     + "INNER JOIN project p ON t.project_id = p.id "
                     + "INNER JOIN status s ON t.status_id = s.id "
+                    + "LEFT JOIN priority pr ON p.priority_id = pr.id "
+                    + "WHERE p.user_id='" + com.wigerlabs.tidetempo.util.SessionManager.getUserSession().id + "' "
                     + "ORDER BY p.id ASC");
 
             while (rs.next()) {
@@ -92,6 +205,10 @@ public class TasksPanel extends javax.swing.JPanel {
                 row.add(rs.getString("created_at"));
                 row.add(rs.getString("updated_at"));
                 row.add(rs.getString("status"));
+                String priority = rs.getString("priority");
+                if ("High".equalsIgnoreCase(priority) || "Urgent".equalsIgnoreCase(priority)) {
+                    highPriorityTaskIds.add(rs.getString("id"));
+                }
                 dtm.addRow(row);
             }
             SwingUtilities.updateComponentTreeUI(tasksTable);
@@ -144,26 +261,26 @@ public class TasksPanel extends javax.swing.JPanel {
         tasksTable.getColumnModel().getColumn(9).setCellRenderer(new ActionTableCellRender(8));
         tasksTable.getColumnModel().getColumn(9).setCellEditor(new ActionTableCellEditor(event, 8));
         
-        javax.swing.JComboBox<String> statusCombo = new javax.swing.JComboBox<>(new String[]{"Pending", "In Progress", "Completed", "Cancelled"});
-        statusCombo.addItemListener(e -> {
-            if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
-                int row = tasksTable.getSelectedRow();
-                if (row != -1) {
-                    String taskId = tasksTable.getValueAt(row, 0).toString();
-                    String newStatus = (String) e.getItem();
-                    int statusId = newStatus.equals("Pending") ? 1 : newStatus.equals("In Progress") ? 2 : newStatus.equals("Completed") ? 3 : 4;
-                    try {
-                        MySQL.execute("UPDATE task SET status_id='" + statusId + "' WHERE id='" + taskId + "'");
-                        if (statusId == 3) {
-                            MySQL.execute("UPDATE task SET end_time=NOW() WHERE id='" + taskId + "'");
-                        } else {
-                            MySQL.execute("UPDATE task SET end_time=NULL WHERE id='" + taskId + "'");
-                        }
-                    } catch(Exception ex) { ex.printStackTrace(); }
-                }
+        tasksTable.getColumnModel().getColumn(8).setCellEditor(new StatusCellEditor(STATUSES, (taskId, newStatus) -> {
+            boolean completed = newStatus.equals("Completed");
+            boolean started = newStatus.equals("In Progress") || completed;
+            try {
+                MySQL.execute("UPDATE task SET status_id=(SELECT id FROM status WHERE name='" + newStatus + "'), "
+                        + "start_time=" + (started ? "IFNULL(start_time, NOW())" : "start_time") + ", "
+                        + "end_time=" + (completed ? "NOW()" : "NULL") + " "
+                        + "WHERE id='" + taskId + "'");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(homeScreen, "Failed to update task status. Please try again.", "Status Update Failed", JOptionPane.ERROR_MESSAGE);
+                return false;
             }
-        });
-        tasksTable.getColumnModel().getColumn(8).setCellEditor(new javax.swing.DefaultCellEditor(statusCombo));
+            // Jump to the new status' tab and reload so end time / updated at are fresh.
+            SwingUtilities.invokeLater(() -> {
+                statusTabs.setSelectedIndex(java.util.Arrays.asList(STATUSES).indexOf(newStatus));
+                loadTasks();
+            });
+            return true;
+        }));
     }
 
     /**
