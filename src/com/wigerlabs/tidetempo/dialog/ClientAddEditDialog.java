@@ -292,20 +292,20 @@ public class ClientAddEditDialog extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void addClientBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addClientBtnActionPerformed
-        String client_name = nameField.getText();
-        String company = companyField.getText();
-        String email = emailField.getText();
-        String phone = phoneField.getText();
+        String client_name = nameField.getText().trim();
+        String company = companyField.getText().trim();
+        String email = emailField.getText().trim();
+        String phone = phoneField.getText().replaceAll("[\\s-]", "");
 
         Timestamp nowTime = CurrentTimeGenerator.getInstance().getCurrentTime();
 
-        if (!Validator.isInputFieldValid("Client name", client_name)) {
+        if (!Validator.isNameValid("Client name", client_name)) {
             return;
-        } else if (!Validator.isInputFieldValid("Company", company)) {
+        } else if (!Validator.isInputFieldValid("Company", company) || !Validator.isLengthValid("Company", company, 100)) {
             return;
-        } else if (!Validator.isInputFieldValid("Email", email)) {
+        } else if (!Validator.isEmailValid(email)) {
             return;
-        } else if (!Validator.isInputFieldValid("Phone", phone)) {
+        } else if (!Validator.isPhoneValid(phone)) {
             return;
         }
 

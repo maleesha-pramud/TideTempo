@@ -5,28 +5,79 @@ import javax.swing.JOptionPane;
 
 public class Validator {
 
-    public static boolean isEmailValid(String value) {
-        if (value.isBlank()) {
-            JOptionPane.showMessageDialog(null, "Email can't be empty!", "Email Validation", JOptionPane.WARNING_MESSAGE);
-            return false;
-        } else if (!value.matches(Validation.EMAIL.validate())) {
-            JOptionPane.showMessageDialog(null, "Please enter valide email address!", "Email Validation", JOptionPane.WARNING_MESSAGE);
-            return false;
-        } else {
-            return true;
-        }
+    private static boolean warn(String title, String message) {
+        JOptionPane.showMessageDialog(null, message, title, JOptionPane.WARNING_MESSAGE);
+        return false;
     }
 
-    public static boolean isMobileValid(String value) {
-        if (value.isBlank()) {
-            JOptionPane.showMessageDialog(null, "Mobile can't be empty!", "Mobile Validation", JOptionPane.WARNING_MESSAGE);
-            return false;
-        } else if (!value.matches(Validation.MOBILE.validate())) {
-            JOptionPane.showMessageDialog(null, "Please enter valide mobile number!", "Mobile Validation", JOptionPane.WARNING_MESSAGE);
-            return false;
-        } else {
-            return true;
+    public static boolean isEmailValid(String value) {
+        if (value == null || value.isBlank()) {
+            return warn("Email Validation", "Email can't be empty!");
+        } else if (value.length() > 100 || !value.matches(Validation.EMAIL.validate())) {
+            return warn("Email Validation", "Please enter a valid email address (e.g. name@example.com).");
         }
+        return true;
+    }
+
+    /** Sri Lankan mobile number only, e.g. 0771234567. */
+    public static boolean isMobileValid(String value) {
+        if (value == null || value.isBlank()) {
+            return warn("Mobile Validation", "Mobile number can't be empty!");
+        } else if (!value.matches(Validation.MOBILE.validate())) {
+            return warn("Mobile Validation", "Please enter a valid Sri Lankan mobile number: 10 digits starting with 0 (e.g. 0771234567).");
+        }
+        return true;
+    }
+
+    /** Sri Lankan mobile (0771234567) or landline (0112345678) number. */
+    public static boolean isPhoneValid(String value) {
+        if (value == null || value.isBlank()) {
+            return warn("Phone Validation", "Phone number can't be empty!");
+        } else if (!value.matches(Validation.MOBILE.validate()) && !value.matches(Validation.LANDLINE.validate())) {
+            return warn("Phone Validation", "Please enter a valid Sri Lankan phone number: 10 digits starting with 0 (e.g. 0771234567 or 0112345678).");
+        }
+        return true;
+    }
+
+    public static boolean isNameValid(String fieldName, String value) {
+        if (!isInputFieldValid(fieldName, value)) {
+            return false;
+        }
+        String v = value.trim();
+        if (v.length() < 2 || v.length() > 50) {
+            return warn(fieldName + " Validation", fieldName + " must be between 2 and 50 characters.");
+        } else if (!v.matches(Validation.NAME.validate())) {
+            return warn(fieldName + " Validation", fieldName + " can only contain letters, spaces, and . ' - characters.");
+        }
+        return true;
+    }
+
+    public static boolean isLengthValid(String fieldName, String value, int max) {
+        if (value != null && value.trim().length() > max) {
+            return warn(fieldName + " Validation", fieldName + " can't be longer than " + max + " characters.");
+        }
+        return true;
+    }
+
+    /** Parses a (possibly comma-formatted) number; shows a warning and returns null if invalid or out of range. */
+    public static Double parseNumber(String fieldName, String raw, double min, double max) {
+        String v = raw == null ? "" : raw.replace(",", "").trim();
+        if (v.isEmpty()) {
+            warn(fieldName + " Validation", fieldName + " can't be empty!");
+            return null;
+        }
+        double n;
+        try {
+            n = Double.parseDouble(v);
+        } catch (NumberFormatException e) {
+            warn(fieldName + " Validation", fieldName + " must be a valid number.");
+            return null;
+        }
+        if (Double.isNaN(n) || Double.isInfinite(n) || n < min || n > max) {
+            warn(fieldName + " Validation", fieldName + " must be between " + min + " and " + max + ".");
+            return null;
+        }
+        return n;
     }
 
     public static boolean isPasswordValid(String value) {
@@ -83,7 +134,7 @@ public class Validator {
     }
 
     public static boolean isInputFieldValid(String inputFieldName, String inputValue) {
-        if (inputValue.isBlank()) {
+        if (inputValue == null || inputValue.isBlank()) {
             WarningDialog.show("<html><p style='width: 100%; height: 100%;'>" + inputFieldName + " can not be empty! </p></html>");
             return false;
         }

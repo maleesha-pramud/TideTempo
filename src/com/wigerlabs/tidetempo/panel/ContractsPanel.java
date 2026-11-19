@@ -46,6 +46,7 @@ import com.wigerlabs.tidetempo.util.Client;
 import com.wigerlabs.tidetempo.util.CurrentTimeGenerator;
 import com.wigerlabs.tidetempo.util.User;
 import com.wigerlabs.tidetempo.util.SessionManager;
+import com.wigerlabs.tidetempo.dialog.WarningDialog;
 import com.wigerlabs.tidetempo.validation.Validator;
 import java.sql.Timestamp;
 import java.text.NumberFormat;
@@ -284,15 +285,52 @@ public class ContractsPanel extends javax.swing.JPanel {
         Client client = (Client) basicInfoPanel.getClientCombo().getSelectedItem();
         String contractDate = basicInfoPanel.getContractDatePicker().getDateStringOrEmptyString();
         ComboItem projectTemplate = (ComboItem) basicInfoPanel.getProjectTemplate().getSelectedItem();
-        String projectName = projectDetailsPanel.getProjectName().getText();
-        String projectDescription = projectDetailsPanel.getProjectDescription().getText();
-        double totalProjectAmount = Double.parseDouble(financialTermsPanel.getTotalProjectAmountField().getText().replace(",", ""));
-        double hourlyRate = Double.parseDouble(financialTermsPanel.getHourlyRateField().getText().replace(",", ""));
-        double estimatedHours = Double.parseDouble(financialTermsPanel.getEstimatedHoursField().getText().replace(",", ""));
+        String projectName = projectDetailsPanel.getProjectName().getText().trim();
+        String projectDescription = projectDetailsPanel.getProjectDescription().getText().trim();
         ComboItem paymentSchedule = (ComboItem) financialTermsPanel.getPaymentScheduleCombo().getSelectedItem();
-        double numberOfRevisions = Double.parseDouble(termsAndConditionsPanel.getNumberOfRevisionsField().getText());
-        String cancellationPolicy = termsAndConditionsPanel.getCancellationPolicyField().getText();
-        String intellectualPropertyRights = termsAndConditionsPanel.getIntellectualPropertyRightsField().getText();
+        String cancellationPolicy = termsAndConditionsPanel.getCancellationPolicyField().getText().trim();
+        String intellectualPropertyRights = termsAndConditionsPanel.getIntellectualPropertyRightsField().getText().trim();
+
+        if (!Validator.isComboBoxValid("Client", client.getId())) {
+            return;
+        } else if (contractDate == null || contractDate.isBlank()) {
+            WarningDialog.show("Please select a contract date.");
+            return;
+        } else if (!Validator.isComboBoxValid("Project Template", projectTemplate.getId())) {
+            return;
+        } else if (!Validator.isInputFieldValid("Project Name", projectName) || !Validator.isLengthValid("Project Name", projectName, 150)) {
+            return;
+        } else if (!Validator.isInputFieldValid("Project Description", projectDescription) || !Validator.isLengthValid("Project Description", projectDescription, 5000)) {
+            return;
+        }
+
+        Double totalAmountValue = Validator.parseNumber("Total Project Amount", financialTermsPanel.getTotalProjectAmountField().getText(), 0, 9999999999.99);
+        if (totalAmountValue == null) {
+            return;
+        }
+        Double hourlyRateValue = Validator.parseNumber("Hourly Rate", financialTermsPanel.getHourlyRateField().getText(), 0, 99999999.99);
+        if (hourlyRateValue == null) {
+            return;
+        }
+        Double estimatedHoursValue = Validator.parseNumber("Estimated Hours", financialTermsPanel.getEstimatedHoursField().getText(), 0, 99999999.99);
+        if (estimatedHoursValue == null) {
+            return;
+        }
+        Double revisionsValue = Validator.parseNumber("Number of Revisions", termsAndConditionsPanel.getNumberOfRevisionsField().getText(), 0, 100);
+        if (revisionsValue == null) {
+            return;
+        }
+        if (!Validator.isComboBoxValid("Payment Schedule", paymentSchedule.getId())) {
+            return;
+        } else if (!Validator.isInputFieldValid("Cancellation Policy", cancellationPolicy)) {
+            return;
+        } else if (!Validator.isInputFieldValid("Intellectual Property Rights", intellectualPropertyRights)) {
+            return;
+        }
+        double totalProjectAmount = totalAmountValue;
+        double hourlyRate = hourlyRateValue;
+        double estimatedHours = estimatedHoursValue;
+        double numberOfRevisions = revisionsValue;
 
         Timestamp nowTime = CurrentTimeGenerator.getInstance().getCurrentTime();
 

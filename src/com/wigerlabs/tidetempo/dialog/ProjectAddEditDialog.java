@@ -282,16 +282,16 @@ public class ProjectAddEditDialog extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void projectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_projectButtonActionPerformed
-        String project_title = titleField.getText();
-        String project_description = descriptionArea.getText();
+        String project_title = titleField.getText().trim();
+        String project_description = descriptionArea.getText().trim();
         ComboItem priority = (ComboItem) priorityCombo.getSelectedItem();
         ComboItem client = (ComboItem) clientCombo.getSelectedItem();
         
         Timestamp nowTime = CurrentTimeGenerator.getInstance().getCurrentTime();
         
-        if (!Validator.isInputFieldValid("Project Title", project_title)) {
+        if (!Validator.isInputFieldValid("Project Title", project_title) || !Validator.isLengthValid("Project Title", project_title, 150)) {
             return;
-        } else if (!Validator.isInputFieldValid("Project Description", project_description)) {
+        } else if (!Validator.isInputFieldValid("Project Description", project_description) || !Validator.isLengthValid("Project Description", project_description, 5000)) {
             return;
         } else if (!Validator.isComboBoxValid("Client", client.getId())) {
             return;
@@ -299,14 +299,11 @@ public class ProjectAddEditDialog extends javax.swing.JDialog {
             return;
         }
         
-        double estimatedHours = 0;
-        try {
-            estimatedHours = Double.parseDouble(estimatedHoursField.getText());
-            if (estimatedHours < 0) throw new NumberFormatException();
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Invalid estimated hours.", "Error", JOptionPane.ERROR_MESSAGE);
+        Double parsedHours = Validator.parseNumber("Estimated Hours", estimatedHoursField.getText(), 0, 100000);
+        if (parsedHours == null) {
             return;
         }
+        double estimatedHours = parsedHours;
         
         try {
             if (!isEditing) {

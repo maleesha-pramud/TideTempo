@@ -208,12 +208,12 @@ public class TaskAddEditDialog extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void createButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createButtonActionPerformed
-        String task_title = titleField.getText();
+        String task_title = titleField.getText().trim();
         ComboItem project = (ComboItem) projectCombo.getSelectedItem();
 
         Timestamp nowTime = CurrentTimeGenerator.getInstance().getCurrentTime();
 
-        if (!Validator.isInputFieldValid("Task Title", task_title)) {
+        if (!Validator.isInputFieldValid("Task Title", task_title) || !Validator.isLengthValid("Task Title", task_title, 150)) {
             return;
         } else if (!Validator.isComboBoxValid("Project", project.getId())) {
             return;

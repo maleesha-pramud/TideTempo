@@ -293,20 +293,20 @@ public class RegisterPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_hourlyRateFieldActionPerformed
 
     private void registerUser() {
-        String f_name = firstNameField.getText();
-        String l_name = lastNameField.getText();
-        String email = emailField.getText();
+        String f_name = firstNameField.getText().trim();
+        String l_name = lastNameField.getText().trim();
+        String email = emailField.getText().trim();
         String password = String.valueOf(passwordField.getPassword());
-        String mobile = mobileField.getText().replace("-", "");
+        String mobile = mobileField.getText().replaceAll("[\\s-]", "");
         String hourly_rate = hourlyRateField.getText().replace(",", "");
 
         String selectedGender = String.valueOf(genderCombo.getSelectedItem());
         int selectedGenderId = genderMap.get(selectedGender);
         double formatted_hourly_rate;
 
-        if (!Validator.isInputFieldValid("First Name", f_name)) {
+        if (!Validator.isNameValid("First Name", f_name)) {
             return;
-        } else if (!Validator.isInputFieldValid("Last Name", l_name)) {
+        } else if (!Validator.isNameValid("Last Name", l_name)) {
             return;
         } else if (!Validator.isEmailValid(email)) {
             return;
@@ -316,11 +316,12 @@ public class RegisterPanel extends javax.swing.JPanel {
             return;
         } else if (!Validator.isComboBoxValid("Gender", selectedGenderId)) {
             return;
-        } else if (!Validator.isInputFieldValid("Hourly Rate", hourly_rate)) {
-            return;
-        } else {
-            formatted_hourly_rate = Double.parseDouble(hourlyRateField.getText().replace(",", ""));
         }
+        Double parsedRate = Validator.parseNumber("Hourly Rate", hourly_rate, 0, 99999999);
+        if (parsedRate == null) {
+            return;
+        }
+        formatted_hourly_rate = parsedRate;
 
         try {
             ResultSet rs = MySQL.execute("SELECT `id` FROM `user` WHERE email='" + email + "'");

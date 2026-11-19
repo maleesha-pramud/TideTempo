@@ -661,18 +661,18 @@ public class SettingsPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        String firstName = firstNameField.getText();
-        String lastName = lastNameField.getText();
-        String email = emailField.getText();
+        String firstName = firstNameField.getText().trim();
+        String lastName = lastNameField.getText().trim();
+        String email = emailField.getText().trim();
         String newPassword = newPasswordField.getText();
         String confirmPassword = confirmPasswordField.getText();
-        String mobile = mobileField.getText();
+        String mobile = mobileField.getText().replaceAll("[\\s-]", "");
         ComboItem gender = (ComboItem) genderCombo.getSelectedItem();
         String hourlyRate = hourlyRateField.getText();
 
-        if (!Validator.isInputFieldValid("First Name", firstName)) {
+        if (!Validator.isNameValid("First Name", firstName)) {
             return;
-        } else if (!Validator.isInputFieldValid("Last Name", lastName)) {
+        } else if (!Validator.isNameValid("Last Name", lastName)) {
             return;
         } else if (!Validator.isEmailValid(email)) {
             return;
@@ -680,7 +680,7 @@ public class SettingsPanel extends javax.swing.JPanel {
             return;
         } else if (!Validator.isComboBoxValid("Gender", gender.getId())) {
             return;
-        } else if (!Validator.isInputFieldValid("Hourly Rate", hourlyRate)) {
+        } else if (Validator.parseNumber("Hourly Rate", hourlyRate, 0, 99999999) == null) {
             return;
         } else if (!Validator.isConfirmPassword(newPassword, confirmPassword)) {
             return;

@@ -31,6 +31,15 @@ public class DashboardPanel extends javax.swing.JPanel implements java.awt.event
         loadCardData();
 
         this.addComponentListener(this);
+
+        // The HomeScreen (and this panel) is created before login, so the session is not
+        // available yet. Reload whenever the panel actually becomes visible on screen
+        // (e.g. when the HomeScreen window is shown right after login).
+        this.addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
+                loadCardData();
+            }
+        });
     }
     
     @Override
