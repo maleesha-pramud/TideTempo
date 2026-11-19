@@ -50,11 +50,18 @@ public class StartWorkingPanel extends javax.swing.JPanel {
             public void actionPerformed(ActionEvent e) {
                 seconds++;
                 updateTimerLabel();
+                updateTotalLabel();
             }
         });
         taskCombo.setEnabled(false);
         finalTimePanel.setVisible(false);
-        
+        buildCustomTimePanel();
+        taskCombo.addActionListener(e -> {
+            updateControls();
+            refreshTaskTotal();
+        });
+        updateControls();
+
         this.addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override
             public void componentShown(java.awt.event.ComponentEvent evt) {
@@ -153,10 +160,62 @@ public class StartWorkingPanel extends javax.swing.JPanel {
         pauseButton.setIcon(new FlatSVGIcon("com/wigerlabs/tidetempo/img/play_icon.svg", 30, 30));
         startStopButton.setText("START");
         startStopButton.setBackground(Colors.GREEN);
+        updateControls();
+    }
+
+    private boolean isItemSelected(javax.swing.JComboBox<ComboItem> combo) {
+        ComboItem item = (ComboItem) combo.getSelectedItem();
+        return item != null && item.getId() != 0;
+    }
+
+    /**
+     * Start/pause are only usable once a project and a task are chosen. The selectors
+     * are locked while time is accumulated so it can't be moved to a different task.
+     */
+    private void updateControls() {
+        boolean projectSelected = isItemSelected(projectCombo);
+        boolean ready = projectSelected && isItemSelected(taskCombo);
+        boolean idle = !isPlay && seconds == 0;
+        projectCombo.setEnabled(idle);
+        taskCombo.setEnabled(idle && projectSelected);
+        startStopButton.setEnabled(ready);
+        pauseButton.setEnabled(ready);
+    }
+
+    /** Loads the already-logged total of the selected task from the database. */
+    private void refreshTaskTotal() {
+        baseTotalSeconds = -1;
+        ComboItem task = (ComboItem) taskCombo.getSelectedItem();
+        if (task != null && task.getId() != 0) {
+            try {
+                ResultSet rs = MySQL.execute("SELECT COALESCE(SUM(`minutes`), 0) AS total FROM `time_log` WHERE task_id = '" + task.getId() + "'");
+                if (rs.next()) {
+                    baseTotalSeconds = rs.getLong("total") * 60;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        updateTotalLabel();
+    }
+
+    /** Shows logged total + the time currently on the stopwatch. */
+    private void updateTotalLabel() {
+        if (totalTimeLabel == null) {
+            return;
+        }
+        if (baseTotalSeconds < 0) {
+            totalTimeLabel.setText("Task total time: select a project and task");
+            return;
+        }
+        long total = baseTotalSeconds + seconds;
+        totalTimeLabel.setText(String.format("Task total time: %02d Hours %02d Mins %02d Secs",
+                total / 3600, (total % 3600) / 60, total % 60));
     }
 
     private void startTimer() {
         isPlay = true;
+        updateControls();
         timer.start();
         pauseButton.setIcon(new FlatSVGIcon("com/wigerlabs/tidetempo/img/pause_icon.svg", 25, 25));
         startStopButton.setText("STOP");
@@ -399,10 +458,25 @@ public class StartWorkingPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_startStopButtonActionPerformed
 
     private void resetButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetButtonActionPerformed
+        if (seconds == 0 && !isPlay) {
+            return;
+        }
+        int choice = JOptionPane.showConfirmDialog(this,
+                "This will discard the time recorded so far (" + timerLabel.getText() + ") without saving it.\nDo you want to reset the timer?",
+                "Reset timer", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (choice == JOptionPane.YES_OPTION) {
+            resetTimerState();
+        }
+    }//GEN-LAST:event_resetButtonActionPerformed
+
+    private void resetTimerState() {
         stopTimer();
         seconds = 0;
         timerLabel.setText("00:00:00");
-    }//GEN-LAST:event_resetButtonActionPerformed
+        finalTimePanel.setVisible(false);
+        updateControls();
+        updateTotalLabel();
+    }
 
     private void pauseButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pauseButtonActionPerformed
         if (isPlay) {
@@ -422,34 +496,113 @@ public class StartWorkingPanel extends javax.swing.JPanel {
             resetTaskCombo();
             taskCombo.setEnabled(false);
         }
+        updateControls();
     }
 
     private void addToTaskBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addToTaskBtnActionPerformed
-        int loggedMinutes = seconds / 60;
+        if (saveTimeLog(seconds / 60)) {
+            // The stopwatch time is now part of the saved total, so clear it to avoid counting it twice.
+            resetTimerState();
+        }
+    }//GEN-LAST:event_addToTaskBtnActionPerformed
+
+    /** Builds the "custom time" entry bar (hours + minutes) shown at the bottom of the panel. */
+    private void buildCustomTimePanel() {
+        customHoursSpinner = new javax.swing.JSpinner(new javax.swing.SpinnerNumberModel(0, 0, 999, 1));
+        customMinutesSpinner = new javax.swing.JSpinner(new javax.swing.SpinnerNumberModel(0, 0, 59, 1));
+        javax.swing.JButton addCustomBtn = new javax.swing.JButton("Add Custom Time");
+        addCustomBtn.setBackground(new java.awt.Color(59, 130, 246));
+        addCustomBtn.setForeground(java.awt.Color.WHITE);
+        addCustomBtn.setFont(new java.awt.Font("Segoe UI", 1, 14));
+        addCustomBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        addCustomBtn.addActionListener(e -> addCustomTime());
+
+        javax.swing.JPanel customPanel = new javax.swing.JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 10, 12));
+        customPanel.setBackground(new java.awt.Color(2, 8, 23));
+        javax.swing.JLabel title = new javax.swing.JLabel("Add time manually:");
+        title.setFont(new java.awt.Font("Segoe UI", 1, 14));
+        customPanel.add(title);
+        customPanel.add(customHoursSpinner);
+        customPanel.add(new javax.swing.JLabel("hours"));
+        customPanel.add(customMinutesSpinner);
+        customPanel.add(new javax.swing.JLabel("mins"));
+        customPanel.add(addCustomBtn);
+
+        totalTimeLabel = new javax.swing.JLabel("", javax.swing.SwingConstants.CENTER);
+        totalTimeLabel.setFont(new java.awt.Font("Segoe UI", 1, 18));
+        javax.swing.JPanel totalPanel = new javax.swing.JPanel(new java.awt.BorderLayout());
+        totalPanel.setBackground(new java.awt.Color(2, 8, 23));
+        totalPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 0, 0, 0));
+        totalPanel.add(totalTimeLabel, java.awt.BorderLayout.CENTER);
+
+        javax.swing.JPanel southPanel = new javax.swing.JPanel(new java.awt.BorderLayout());
+        southPanel.setBackground(new java.awt.Color(2, 8, 23));
+        southPanel.add(totalPanel, java.awt.BorderLayout.NORTH);
+        southPanel.add(customPanel, java.awt.BorderLayout.CENTER);
+        add(southPanel, java.awt.BorderLayout.SOUTH);
+        baseTotalSeconds = -1;
+        updateTotalLabel();
+    }
+
+    private void addCustomTime() {
+        try {
+            customHoursSpinner.commitEdit();
+            customMinutesSpinner.commitEdit();
+        } catch (java.text.ParseException e) {
+            JOptionPane.showMessageDialog(this, "Please enter whole numbers for hours and minutes.", "Invalid time", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int hours = (Integer) customHoursSpinner.getValue();
+        int minutes = (Integer) customMinutesSpinner.getValue();
+        int total = hours * 60 + minutes;
+        if (total <= 0) {
+            JOptionPane.showMessageDialog(this, "Custom time must be at least 1 minute.", "Invalid time", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (saveTimeLog(total)) {
+            customHoursSpinner.setValue(0);
+            customMinutesSpinner.setValue(0);
+        }
+    }
+
+    /** Validates the selections and stores the given minutes against the selected task. */
+    private boolean saveTimeLog(int loggedMinutes) {
         ComboItem task = (ComboItem) taskCombo.getSelectedItem();
         ComboItem project = (ComboItem) projectCombo.getSelectedItem();
 
         if (project == null || !Validator.isComboBoxValid("Project Combo", project.getId())) {
-            return;
+            return false;
         } else if (task == null || !Validator.isComboBoxValid("Task Combo", task.getId())) {
-            return;
+            return false;
+        }
+        if (loggedMinutes <= 0) {
+            JOptionPane.showMessageDialog(this, "Logged time must be at least 1 minute.", "Invalid time", JOptionPane.WARNING_MESSAGE);
+            return false;
         }
 
         User currentUser = SessionManager.getUserSession();
         if (currentUser == null || currentUser.id == 0) {
             JOptionPane.showMessageDialog(this, "Invalid user session. Please login again.", "Session Error", JOptionPane.ERROR_MESSAGE);
-            return;
+            return false;
         }
 
         try {
             MySQL.execute("INSERT INTO `time_log` (user_id, task_id, minutes) VALUES ('" + currentUser.id + "', '" + task.getId() + "', '" + loggedMinutes + "')");
             MySQL.execute("UPDATE `task` SET `start_time` = NOW() WHERE `id` = '" + task.getId() + "' AND `start_time` IS NULL");
             SuccessDialog.show("Time added to the task successfully!");
+            refreshTaskTotal();
+            return true;
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Please recheck the task and try again.", "Time adding failed!", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
+            return false;
         }
-    }//GEN-LAST:event_addToTaskBtnActionPerformed
+    }
+
+    private javax.swing.JSpinner customHoursSpinner;
+    private javax.swing.JSpinner customMinutesSpinner;
+    private javax.swing.JLabel totalTimeLabel;
+    private long baseTotalSeconds = -1;
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
