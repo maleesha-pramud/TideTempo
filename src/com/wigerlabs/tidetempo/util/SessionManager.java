@@ -68,6 +68,12 @@ public class SessionManager {
         }
     }
 
+    // Id of the logged-in user, or -1 when nobody is logged in (matches no rows in user-scoped queries)
+    public static int getUserId() {
+        User user = getUserSession();
+        return user == null ? -1 : user.id;
+    }
+
     // Clear Session
     public static void clearUserSession() {
         File sessionFile = new File(SESSION_FILE);

@@ -68,18 +68,33 @@ public class DashboardPanel extends javax.swing.JPanel implements java.awt.event
         totalEarningsIcon.setIcon(new FlatSVGIcon("com/wigerlabs/tidetempo/img/rupee_icon.svg", 25, 25));
     }
     
-    private void loadCardData() {
+    public void loadCardData() {
+        User userData = SessionManager.getUserSession();
+        if (userData == null) {
+            // Not logged in yet; reloaded once the panel is shown after login.
+            // Reset so neither the designer placeholders nor a previous user's numbers linger.
+            totalClientsLabel.setText("0");
+            activeProjectsLabel.setText("0");
+            jLabel9.setText("0.0");
+            jLabel12.setText("0");
+            return;
+        }
         try {
+            String uid = String.valueOf(userData.id);
             ResultSet rs = MySQL.execute("SELECT "
-                    + "(SELECT COUNT(*) FROM `client`) AS client_count, "
-                    + "(SELECT COUNT(*) FROM `project`) AS project_count, "
-                    + "(SELECT SUM(minutes) FROM `time_log`) AS total_minutes");
+                    + "(SELECT COUNT(*) FROM `client` WHERE user_id='" + uid + "') AS client_count, "
+                    + "(SELECT COUNT(*) FROM `project` WHERE user_id='" + uid + "' AND status_id IN (1, 2)) AS project_count, "
+                    + "(SELECT IFNULL(SUM(minutes), 0) FROM `time_log` WHERE user_id='" + uid + "') AS total_minutes, "
+                    + "(SELECT IFNULL(SUM(tl.minutes), 0) FROM `time_log` tl INNER JOIN `task` t ON tl.task_id = t.id "
+                    + "INNER JOIN `project` p ON t.project_id = p.id WHERE p.user_id='" + uid + "') AS project_minutes, "
+                    + "(SELECT IFNULL(hourly_rate, 0) FROM `user` WHERE id='" + uid + "') AS hourly_rate");
             if(rs.next()) {
                 totalClientsLabel.setText(rs.getString("client_count"));
                 activeProjectsLabel.setText(rs.getString("project_count"));
-                int totalMinutes = rs.getInt("total_minutes");
-                double hours = totalMinutes / 60.0;
+                double hours = rs.getInt("total_minutes") / 60.0;
                 jLabel9.setText(String.format("%.1f", hours));
+                double earnings = (rs.getInt("project_minutes") / 60.0) * rs.getDouble("hourly_rate");
+                jLabel12.setText(String.format("%,.0f", earnings));
             }
         }catch(SQLException e) {
             e.printStackTrace();

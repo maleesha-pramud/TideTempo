@@ -365,6 +365,7 @@ public class HomeScreen extends javax.swing.JFrame {
     private void dashboardBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dashboardBtnActionPerformed
         this.contentPanelLayout.show(contentPanel, "dashboard_panel");
         setButtonActive(dashboardBtn);
+        dashboardPanel.loadCardData(); // always show fresh data (e.g. after project/task status changes)
     }//GEN-LAST:event_dashboardBtnActionPerformed
 
     private void contractsBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_contractsBtnActionPerformed

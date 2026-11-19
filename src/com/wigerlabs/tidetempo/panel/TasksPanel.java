@@ -186,7 +186,7 @@ public class TasksPanel extends javax.swing.JPanel {
                     + "INNER JOIN project p ON t.project_id = p.id "
                     + "INNER JOIN status s ON t.status_id = s.id "
                     + "LEFT JOIN priority pr ON p.priority_id = pr.id "
-                    + "WHERE p.user_id='" + com.wigerlabs.tidetempo.util.SessionManager.getUserSession().id + "' "
+                    + "WHERE p.user_id='" + com.wigerlabs.tidetempo.util.SessionManager.getUserId() + "' "
                     + "ORDER BY p.id ASC");
 
             while (rs.next()) {

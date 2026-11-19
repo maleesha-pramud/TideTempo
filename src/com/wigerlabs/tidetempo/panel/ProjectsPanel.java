@@ -72,6 +72,14 @@ public class ProjectsPanel extends javax.swing.JPanel {
         Border border = BorderFactory.createLineBorder(Colors.LIGHT_BLUE);
         tableScrollPane.setBorder(border);
 
+        // Panels are created before login (and reused after re-login), so reload when shown.
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent evt) {
+                loadProjects();
+            }
+        });
+
         setupToolbar();
         setupHighlightRenderer();
     }
@@ -174,6 +182,7 @@ public class ProjectsPanel extends javax.swing.JPanel {
                     + "INNER JOIN priority pr ON p.priority_id = pr.id "
                     + "INNER JOIN client c ON p.client_id = c.id "
                     + "INNER JOIN status s ON p.status_id = s.id "
+                    + "WHERE p.user_id='" + com.wigerlabs.tidetempo.util.SessionManager.getUserId() + "' "
                     + "ORDER BY p.id ASC");
 
             while (rs.next()) {

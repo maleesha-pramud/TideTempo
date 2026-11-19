@@ -53,6 +53,14 @@ public class ClientsPanel extends javax.swing.JPanel {
         header.setPreferredSize(new Dimension(0, 50));
         Border border = BorderFactory.createLineBorder(Colors.LIGHT_BLUE);
         tableScrollPane.setBorder(border);
+
+        // Panels are created before login (and reused after re-login), so reload when shown.
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent evt) {
+                loadClients();
+            }
+        });
     }
 
     public synchronized void loadClients() {
@@ -66,6 +74,7 @@ public class ClientsPanel extends javax.swing.JPanel {
         try {
             ResultSet rs = MySQL.execute("SELECT c.id, c.name, c.company, c.email, c.phone, c.status_id, c.created_at, c.updated_at "
                     + "FROM client c "
+                    + "WHERE c.user_id='" + com.wigerlabs.tidetempo.util.SessionManager.getUserId() + "' "
                     + "ORDER BY c.id ASC");
 
             while (rs.next()) {

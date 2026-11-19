@@ -493,7 +493,7 @@ public class ContractsPanel extends javax.swing.JPanel {
         }
 
         try {
-            ResultSet rs = MySQL.execute("SELECT id from `project` WHERE title='" + projectTitle + "'");
+            ResultSet rs = MySQL.execute("SELECT id from `project` WHERE title='" + projectTitle + "' AND user_id='" + SessionManager.getUserId() + "'");
             if (rs.next()) {
                 contractId = rs.getInt("id");
                 System.out.println("Project id gotted: " + contractId);

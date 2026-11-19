@@ -76,7 +76,7 @@ public class TaskAddEditDialog extends javax.swing.JDialog {
             ResultSet rs = MySQL.execute("SELECT t.title, p.title AS project "
                     + "FROM task t "
                     + "INNER JOIN project p ON t.project_id = p.id "
-                    + "WHERE t.id='" + taskId + "'");
+                    + "WHERE t.id='" + taskId + "' AND p.user_id='" + userData.id + "'");
             if (rs.next()) {
                 titleField.setText(rs.getString("title"));
 
@@ -100,7 +100,7 @@ public class TaskAddEditDialog extends javax.swing.JDialog {
         projectList = new ArrayList<>();
         projectCombo.addItem(new ComboItem(0, "Select Project"));
         try {
-            ResultSet rs = MySQL.execute("SELECT * FROM `project`");
+            ResultSet rs = MySQL.execute("SELECT * FROM `project` WHERE user_id='" + userData.id + "'");
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String name = rs.getString("title");

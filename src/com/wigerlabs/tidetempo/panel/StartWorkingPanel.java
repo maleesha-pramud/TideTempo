@@ -101,7 +101,7 @@ public class StartWorkingPanel extends javax.swing.JPanel {
         projectCombo.removeAllItems();
         projectCombo.addItem(new ComboItem(0, "Select Project"));
         try {
-            ResultSet rs = MySQL.execute("SELECT * FROM `project`");
+            ResultSet rs = MySQL.execute("SELECT * FROM `project` WHERE user_id='" + SessionManager.getUserId() + "'");
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String title = rs.getString("title");

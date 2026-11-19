@@ -43,7 +43,7 @@ public class BasicInfoPanel extends javax.swing.JPanel {
         clientList = new ArrayList<>();
         clientCombo.addItem(new Client(0, "Select Client", ""));
         try {
-            ResultSet rs = MySQL.execute("SELECT * FROM `client`");
+            ResultSet rs = MySQL.execute("SELECT * FROM `client` WHERE user_id='" + com.wigerlabs.tidetempo.util.SessionManager.getUserId() + "'");
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String name = rs.getString("name");

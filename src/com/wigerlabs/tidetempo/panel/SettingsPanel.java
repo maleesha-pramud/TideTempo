@@ -87,7 +87,7 @@ public class SettingsPanel extends javax.swing.JPanel {
                 if (success) {
                     JOptionPane.showMessageDialog(this, "Backup created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 } else {
-                    JOptionPane.showMessageDialog(this, "Failed to create backup. Ensure MySQL is in your system PATH.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Failed to create backup. Make sure MySQL (or its Docker container) is running. See the application log for details.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -105,7 +105,7 @@ public class SettingsPanel extends javax.swing.JPanel {
                         JOptionPane.showMessageDialog(this, "Database restored successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                         refreshPanelData();
                     } else {
-                        JOptionPane.showMessageDialog(this, "Failed to restore database. Ensure MySQL is in your system PATH.", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Failed to restore database. Make sure MySQL (or its Docker container) is running. See the application log for details.", "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }

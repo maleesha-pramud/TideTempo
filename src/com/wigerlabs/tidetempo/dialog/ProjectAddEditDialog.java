@@ -117,7 +117,7 @@ public class ProjectAddEditDialog extends javax.swing.JDialog {
         clientList = new ArrayList<>();
         clientCombo.addItem(new ComboItem(0, "Select Client"));
         try {
-            ResultSet rs = MySQL.execute("SELECT * FROM `client`");
+            ResultSet rs = MySQL.execute("SELECT * FROM `client` WHERE user_id='" + userData.id + "'");
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String name = rs.getString("name");
