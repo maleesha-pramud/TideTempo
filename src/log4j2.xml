@@ -5,7 +5,7 @@
             <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss}] [%level] [%logger{36}] - %msg%n%throwable"/>
         </Console>
         
-        <RollingFile name="FileLogger" fileName="logs/application.log" filePattern="logs/application-%i.log">
+        <RollingFile name="FileLogger" fileName="${env:LOCALAPPDATA:-${sys:user.home}}/TideTempo/logs/application.log" filePattern="${env:LOCALAPPDATA:-${sys:user.home}}/TideTempo/logs/application-%i.log">
             <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss}] [%level] [%logger{36}] - %msg%n%throwable"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="5MB" />

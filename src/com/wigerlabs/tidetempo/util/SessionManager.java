@@ -11,7 +11,16 @@ import java.util.Properties;
 
 public class SessionManager {
 
-    private static final String CONFIG_DIR = System.getProperty("user.dir");
+    // Per-user data folder (removed by the uninstaller); never write into the install directory.
+    private static final String CONFIG_DIR = resolveConfigDir();
+
+    private static String resolveConfigDir() {
+        String base = System.getenv("LOCALAPPDATA");
+        if (base == null || base.isEmpty()) {
+            base = System.getProperty("user.home");
+        }
+        return base + File.separator + "TideTempo";
+    }
     private static final String SESSION_FILE = CONFIG_DIR + File.separator + "session.properties";
 
     // Ensure the config directory exists
