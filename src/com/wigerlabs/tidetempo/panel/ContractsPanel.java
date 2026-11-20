@@ -113,10 +113,43 @@ public class ContractsPanel extends javax.swing.JPanel {
             @Override
             public void componentShown(java.awt.event.ComponentEvent evt) {
                 loadContracts();
+                basicInfoPanel.refreshData();
+            }
+        });
+        jTabbedPane1.addChangeListener(e -> {
+            if (jTabbedPane1.getSelectedIndex() == 0) {
+                basicInfoPanel.refreshData();
             }
         });
         
+        restrictToNumbers(financialTermsPanel.getTotalProjectAmountField(), true);
+        restrictToNumbers(financialTermsPanel.getHourlyRateField(), true);
+        restrictToNumbers(financialTermsPanel.getEstimatedHoursField(), true);
+        restrictToNumbers(termsAndConditionsPanel.getNumberOfRevisionsField(), false);
+
         SwingUtilities.updateComponentTreeUI(contentPanel);
+    }
+
+    /** Blocks letters, minus signs and symbols while typing (decimal allows a single dot). */
+    private void restrictToNumbers(javax.swing.JTextField field, boolean decimal) {
+        field.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyTyped(java.awt.event.KeyEvent e) {
+                char c = e.getKeyChar();
+                if (Character.isISOControl(c)) {
+                    return;
+                }
+                boolean ok = Character.isDigit(c) && c < 128
+                        || (decimal && c == '.' && !field.getText().contains("."));
+                if (!ok) {
+                    e.consume();
+                }
+            }
+        });
+    }
+
+    private static String esc(String v) {
+        return v == null ? "" : v.replace("\\", "\\\\").replace("'", "''");
     }
 
     public synchronized void loadContracts() {
@@ -424,8 +457,8 @@ public class ContractsPanel extends javax.swing.JPanel {
                     + "cancellation_policy, intellectual_policy, status_id, created_at) VALUES "
                     + "('" + data.contractDate + "','" + data.projectTemplate.getId() + "','" + data.client.getId() + "','"
                     + contractId + "','" + data.paymentSchedule.getId() + "','" + data.totalProjectAmount + "','" + data.hourlyRate + "','"
-                    + data.estimatedHours + "','" + data.numberOfRevisions + "','" + data.cancellationPolicy + "','"
-                    + data.intellectualPropertyRights + "','1','" + nowTime + "')");
+                    + data.estimatedHours + "','" + data.numberOfRevisions + "','" + esc(data.cancellationPolicy) + "','"
+                    + esc(data.intellectualPropertyRights) + "','1','" + nowTime + "')");
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Please try again to add the same project.", "Contract adding failed!", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
@@ -478,12 +511,12 @@ public class ContractsPanel extends javax.swing.JPanel {
             if (!isEditing) {
                 User userData = SessionManager.getUserSession();
                 MySQL.execute("INSERT INTO `project` (title, description, priority_id, user_id, client_id, status_id, created_at) VALUES "
-                        + "('" + projectTitle + "','" + projectDescription + "','" + 1 + "','"
+                        + "('" + esc(projectTitle) + "','" + esc(projectDescription) + "','" + 1 + "','"
                         + userData.id + "','" + client.getId() + "','" + 4 + "','" + nowTime + "')");
                 System.out.println("Project added successfully!");
             } else {
                 MySQL.execute("UPDATE `project` "
-                        + " SET title='" + projectTitle + "', description='" + projectDescription
+                        + " SET title='" + esc(projectTitle) + "', description='" + esc(projectDescription)
                         + "', client_id='" + client.getId() + "', updated_at='" + nowTime + "' WHERE id='" + contractId + "'");
                 System.out.println("Project updated successfully!");
             }
@@ -493,7 +526,7 @@ public class ContractsPanel extends javax.swing.JPanel {
         }
 
         try {
-            ResultSet rs = MySQL.execute("SELECT id from `project` WHERE title='" + projectTitle + "' AND user_id='" + SessionManager.getUserId() + "'");
+            ResultSet rs = MySQL.execute("SELECT id from `project` WHERE title='" + esc(projectTitle) + "' AND user_id='" + SessionManager.getUserId() + "'");
             if (rs.next()) {
                 contractId = rs.getInt("id");
                 System.out.println("Project id gotted: " + contractId);

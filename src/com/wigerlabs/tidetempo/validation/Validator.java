@@ -66,6 +66,10 @@ public class Validator {
             warn(fieldName + " Validation", fieldName + " can't be empty!");
             return null;
         }
+        if (!v.matches("\\d+(\\.\\d+)?")) {
+            warn(fieldName + " Validation", fieldName + " must contain only digits (no letters, minus signs or symbols).");
+            return null;
+        }
         double n;
         try {
             n = Double.parseDouble(v);

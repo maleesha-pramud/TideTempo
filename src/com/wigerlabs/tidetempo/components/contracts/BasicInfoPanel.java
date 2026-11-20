@@ -39,8 +39,30 @@ public class BasicInfoPanel extends javax.swing.JPanel {
         loadProjectTemplate();
     }
     
+    /** Reloads the client and template lists, keeping the current selection when possible. */
+    public void refreshData() {
+        Object selClient = clientCombo.getSelectedItem();
+        Object selTemplate = projectTemplateCombo.getSelectedItem();
+        loadClients();
+        loadProjectTemplate();
+        selectById(clientCombo, selClient instanceof Client ? ((Client) selClient).getId() : 0);
+        selectById(projectTemplateCombo, selTemplate instanceof ComboItem ? ((ComboItem) selTemplate).getId() : 0);
+    }
+
+    private static void selectById(JComboBox combo, int id) {
+        for (int i = 0; i < combo.getItemCount(); i++) {
+            Object o = combo.getItemAt(i);
+            int oid = o instanceof Client ? ((Client) o).getId() : o instanceof ComboItem ? ((ComboItem) o).getId() : -1;
+            if (oid == id) {
+                combo.setSelectedIndex(i);
+                return;
+            }
+        }
+    }
+
     private void loadClients() {
         clientList = new ArrayList<>();
+        clientCombo.removeAllItems();
         clientCombo.addItem(new Client(0, "Select Client", ""));
         try {
             ResultSet rs = MySQL.execute("SELECT * FROM `client` WHERE user_id='" + com.wigerlabs.tidetempo.util.SessionManager.getUserId() + "'");
@@ -59,6 +81,7 @@ public class BasicInfoPanel extends javax.swing.JPanel {
     
     private void loadProjectTemplate() {
         projectTemplateList = new ArrayList<>();
+        projectTemplateCombo.removeAllItems();
         projectTemplateCombo.addItem(new ComboItem(0, "Select a Template"));
         try {
             ResultSet rs = MySQL.execute("SELECT * FROM `project_template`");
